@@ -3,6 +3,11 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
+// FITUR LOGIN
+router.post("/login", async () => {
+  console.log("Login API");
+})
+
 // FITUR REGISTER 
 router.post('/register', async (req, res) => {
   try {
