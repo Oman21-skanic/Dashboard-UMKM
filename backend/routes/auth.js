@@ -8,6 +8,11 @@ router.post("/login", async () => {
   console.log("Login API");
 })
 
+// FITUR FORGOT PASSWORD
+router.post("/forgot-password", async () => {
+  console.log("Forgot Password");
+})
+
 // FITUR REGISTER 
 router.post('/register', async (req, res) => {
   try {
