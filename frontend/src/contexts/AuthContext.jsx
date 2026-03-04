@@ -25,6 +25,27 @@ function normalizeEmail(value) {
   return value.trim().toLowerCase();
 }
 
+function normalizeWhatsapp(value) {
+  return String(value ?? "").replace(/\D/g, "");
+}
+
+function inferBusinessNameFromEmail(email) {
+  const localPart = normalizeEmail(email).split("@")[0] || "bisnis-anda";
+  const words = localPart
+    .replace(/[._-]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!words.length) {
+    return "Bisnis Anda";
+  }
+
+  return words
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const savedSession = readJson(STORAGE_KEYS.session, null);
@@ -35,20 +56,56 @@ export function AuthProvider({ children }) {
   });
   const [loading] = useState(false);
 
-  const register = async (email, businessName, password) => {
-    const normalizedEmail = normalizeEmail(email);
-    const safeBusinessName = businessName.trim();
-    const safePassword = password.trim();
+  const register = async (
+    fullName,
+    businessName,
+    email,
+    whatsapp,
+    password,
+  ) => {
+    const safeFullName = String(fullName ?? "").trim();
+    const normalizedEmail = normalizeEmail(String(email ?? ""));
+    const normalizedWhatsapp = normalizeWhatsapp(whatsapp);
+    const safeBusinessName =
+      String(businessName ?? "").trim() ||
+      inferBusinessNameFromEmail(normalizedEmail);
+    const safePassword = String(password ?? "").trim();
+
+    if (!safeFullName) {
+      throw new Error("Nama lengkap wajib diisi.");
+    }
+    if (!safeBusinessName) {
+      throw new Error("Nama toko wajib diisi.");
+    }
+    if (!normalizedEmail) {
+      throw new Error("Email wajib diisi.");
+    }
+    if (!normalizedWhatsapp) {
+      throw new Error("No. WhatsApp wajib diisi.");
+    }
+    if (!safePassword) {
+      throw new Error("Password wajib diisi.");
+    }
 
     const users = readJson(STORAGE_KEYS.users, []);
-    const alreadyExists = users.some((item) => item.email === normalizedEmail);
+    const emailExists = users.some((item) => item.email === normalizedEmail);
+    const whatsappExists = users.some(
+      (item) => item.whatsapp && item.whatsapp === normalizedWhatsapp,
+    );
 
-    if (alreadyExists) {
+    if (emailExists) {
       throw new Error("Email sudah terdaftar. Silakan gunakan email lain.");
+    }
+    if (whatsappExists) {
+      throw new Error(
+        "No. WhatsApp sudah terdaftar. Silakan gunakan nomor lain.",
+      );
     }
 
     const nextUser = {
+      fullName: safeFullName,
       email: normalizedEmail,
+      whatsapp: normalizedWhatsapp,
       businessName: safeBusinessName,
       password: safePassword,
     };
@@ -59,20 +116,30 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  const login = async (email, password) => {
-    const normalizedEmail = normalizeEmail(email);
-    const safePassword = password.trim();
+  const login = async (identifier, password) => {
+    const safeIdentifier = String(identifier ?? "").trim();
+    const normalizedEmail = normalizeEmail(safeIdentifier);
+    const normalizedWhatsapp = normalizeWhatsapp(safeIdentifier);
+    const safePassword = String(password ?? "").trim();
+    const useEmailIdentifier = safeIdentifier.includes("@");
 
     const users = readJson(STORAGE_KEYS.users, []);
-    const matchedUser = users.find((item) => item.email === normalizedEmail && item.password === safePassword);
+    const matchedUser = users.find((item) => {
+      const isIdentifierMatch = useEmailIdentifier
+        ? item.email === normalizedEmail
+        : Boolean(normalizedWhatsapp) && item.whatsapp === normalizedWhatsapp;
+      return isIdentifierMatch && item.password === safePassword;
+    });
 
     if (!matchedUser) {
-      throw new Error("Email atau password tidak valid.");
+      throw new Error("Email/No. WhatsApp atau password tidak valid.");
     }
 
     const sessionUser = {
       email: matchedUser.email,
       businessName: matchedUser.businessName,
+      fullName: matchedUser.fullName || "",
+      whatsapp: matchedUser.whatsapp || "",
     };
 
     localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(sessionUser));
