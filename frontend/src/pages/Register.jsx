@@ -1,41 +1,54 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Lock, Mail, Package, Store } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Phone,
+  Store,
+  User,
+} from "lucide-react";
+import AuthBottomNav from "@/component/AuthBottomNav";
+import AuthShell from "@/component/AuthShell";
+import TikTokIcon from "@/component/TikTokIcon";
 import { Input } from "@/component/ui/input";
 import { Button } from "@/component/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
-function getPasswordStrength(password) {
-  let score = 0;
-  if (password.length >= 8) score += 1;
-  if (/[A-Z]/.test(password)) score += 1;
-  if (/[0-9]/.test(password)) score += 1;
-  if (/[^A-Za-z0-9]/.test(password)) score += 1;
-
-  if (score <= 1) return { level: "Lemah", color: "bg-danger", width: "25%" };
-  if (score === 2) return { level: "Sedang", color: "bg-warning", width: "50%" };
-  if (score === 3) return { level: "Kuat", color: "bg-info", width: "75%" };
-  return { level: "Sangat Kuat", color: "bg-success", width: "100%" };
+function normalizeWhatsapp(value) {
+  return value.replace(/\D/g, "");
 }
 
 export default function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [email, setEmail] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const strength = useMemo(() => getPasswordStrength(password), [password]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validate = () => {
+    if (!fullName.trim()) return "Nama lengkap wajib diisi.";
+    if (!businessName.trim()) return "Nama toko wajib diisi.";
     if (!email.trim()) return "Email wajib diisi.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Format email tidak valid.";
-    if (!businessName.trim()) return "Nama bisnis wajib diisi.";
-    if (businessName.trim().length < 2) return "Nama bisnis minimal 2 karakter.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      return "Format email tidak valid.";
+
+    const normalizedPhone = normalizeWhatsapp(whatsapp);
+    if (!normalizedPhone) return "No. WhatsApp wajib diisi.";
+    if (normalizedPhone.length < 10 || normalizedPhone.length > 15) {
+      return "No. WhatsApp harus 10-15 digit.";
+    }
+
     if (!password.trim()) return "Password wajib diisi.";
     if (password.length < 8) return "Password minimal 8 karakter.";
     if (password !== confirmPassword) return "Konfirmasi password tidak cocok.";
@@ -54,7 +67,7 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      await register(email, businessName, password);
+      await register(fullName, businessName, email, whatsapp, password);
       navigate("/login", { replace: true });
     } catch (submitError) {
       setError(submitError.message || "Registrasi gagal. Silakan coba lagi.");
@@ -64,138 +77,169 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-6xl overflow-hidden rounded-3xl border border-border bg-card shadow-[0_10px_25px_rgba(16,46,74,0.08)] lg:grid-cols-[1.05fr_0.95fr]">
-        <aside className="relative hidden bg-primary px-10 py-12 text-primary-foreground lg:block">
-          <div className="pointer-events-none absolute -right-24 top-12 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute bottom-12 left-8 h-56 w-56 rounded-full bg-white/8 blur-3xl" />
-          <div className="relative space-y-9">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15">
-                <Package className="h-6 w-6" />
+    <AuthShell activeTab="register" showCommunityCard={false}>
+      <section className="space-y-5 lg:space-y-6">
+        <div>
+          <h1 className="text-4xl leading-[1.1] font-semibold tracking-[-0.02em] text-[#123a5e] lg:text-[3.05rem]">
+            Mulai kelola bisnis Anda sekarang!
+          </h1>
+          <p className="mt-1.5 text-base text-[#647387] lg:text-[1.6rem]">
+            Daftar gratis untuk 14 hari pertama penggunaan premium.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3.5 lg:space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="auth-field-label">Nama Lengkap</label>
+              <div className="relative">
+                <User className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8f98a6]" />
+                <Input
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                  type="text"
+                  placeholder="Ujang Sudrajat"
+                  className="auth-input pl-11"
+                  disabled={isLoading}
+                />
               </div>
-              <p className="text-2xl font-bold tracking-tight">DashUMKM</p>
             </div>
-            <div className="space-y-4">
-              <h1 className="text-4xl font-bold leading-tight">Bangun pusat kontrol bisnis UMKM Anda.</h1>
-              <p className="max-w-md text-sm leading-relaxed text-primary-foreground/80">
-                Dengan satu akun, Anda bisa memantau performa penjualan, inventori, dan aktivitas toko secara menyeluruh.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/8 p-5">
-              <p className="text-sm font-semibold">Keuntungan langsung setelah daftar:</p>
-              <ul className="mt-3 space-y-2 text-xs text-primary-foreground/80">
-                <li>- Dashboard operasional real-time.</li>
-                <li>- Pengingat stok menipis otomatis.</li>
-                <li>- Laporan performa harian siap pakai.</li>
-              </ul>
+
+            <div>
+              <label className="auth-field-label">Nama Toko</label>
+              <div className="relative">
+                <Store className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8f98a6]" />
+                <Input
+                  value={businessName}
+                  onChange={(event) => setBusinessName(event.target.value)}
+                  type="text"
+                  placeholder="Toko Berkah"
+                  className="auth-input pl-11"
+                  disabled={isLoading}
+                />
+              </div>
             </div>
           </div>
-        </aside>
 
-        <main className="flex items-center justify-center px-6 py-10 sm:px-10">
-          <div className="w-full max-w-md space-y-8">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 lg:hidden">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                  <Package className="h-5 w-5" />
-                </div>
-                <span className="text-xl font-bold text-foreground">DashUMKM</span>
-              </div>
-              <h2 className="text-3xl font-bold text-foreground">Daftar akun baru</h2>
-              <p className="text-sm text-muted-foreground">Mulai kelola bisnis Anda dengan sistem yang lebih rapi.</p>
+          <div>
+            <label className="auth-field-label">Email</label>
+            <div className="relative">
+              <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8f98a6]" />
+              <Input
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                type="email"
+                placeholder="ujang@tokoku.id"
+                className="auth-input pl-11"
+                disabled={isLoading}
+              />
             </div>
-
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Email Bisnis</label>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    type="email"
-                    placeholder="nama@bisnis.com"
-                    className="h-12 rounded-xl border-input bg-white pl-10"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Nama Bisnis</label>
-                <div className="relative">
-                  <Store className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={businessName}
-                    onChange={(event) => setBusinessName(event.target.value)}
-                    type="text"
-                    placeholder="Contoh: Reyhan Craft"
-                    className="h-12 rounded-xl border-input bg-white pl-10"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Password</label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    type="password"
-                    placeholder="Minimal 8 karakter"
-                    className="h-12 rounded-xl border-input bg-white pl-10"
-                    disabled={isLoading}
-                  />
-                </div>
-                {password ? (
-                  <div className="space-y-1">
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-soft">
-                      <div className={`h-full ${strength.color} transition-all duration-300`} style={{ width: strength.width }} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Kekuatan password: <span className="font-semibold text-foreground">{strength.level}</span>
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Konfirmasi Password</label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    type="password"
-                    placeholder="Ulangi password"
-                    className="h-12 rounded-xl border-input bg-white pl-10"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              {error ? (
-                <p className="rounded-xl border-l-4 border-danger bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
-              ) : null}
-
-              <Button className="h-12 w-full gap-2 rounded-xl text-sm font-semibold" disabled={isLoading}>
-                {isLoading ? "Memproses..." : "Daftar Sekarang"}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </form>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Sudah punya akun?{" "}
-              <Link to="/login" className="font-semibold text-primary hover:text-primary-hover">
-                Masuk sekarang
-              </Link>
-            </p>
           </div>
-        </main>
-      </div>
-    </div>
+
+          <div>
+            <label className="auth-field-label">WhatsApp</label>
+            <div className="relative">
+              <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8f98a6]" />
+              <Input
+                value={whatsapp}
+                onChange={(event) => setWhatsapp(event.target.value)}
+                type="text"
+                inputMode="numeric"
+                placeholder="081234567890"
+                className="auth-input pl-11"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="auth-field-label">Password</label>
+            <div className="relative">
+              <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8f98a6]" />
+              <Input
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                type={showPassword ? "text" : "password"}
+                placeholder="Minimal 8 karakter"
+                className="auth-input pl-11 pr-11"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#8f98a6]"
+                aria-label={showPassword ? "Sembunyikan password" : "Lihat password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="auth-field-label">Konfirmasi Password</label>
+            <div className="relative">
+              <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8f98a6]" />
+              <Input
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Ulangi password"
+                className="auth-input pl-11 pr-11"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#8f98a6]"
+                aria-label={
+                  showConfirmPassword
+                    ? "Sembunyikan konfirmasi password"
+                    : "Lihat konfirmasi password"
+                }
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {error ? <p className="auth-error">{error}</p> : null}
+
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="h-12 w-full rounded-xl bg-[#123d62] text-base font-semibold text-[#f2efe8] hover:bg-[#103759] lg:h-[3.95rem] lg:text-[1.45rem]"
+          >
+            {isLoading ? "Memproses..." : "Daftar Sekarang"}
+            <ArrowRight className="h-[1em] w-[1em] shrink-0" />
+          </Button>
+        </form>
+
+        <div className="flex items-center gap-3 lg:gap-4">
+          <span className="h-px flex-1 bg-[rgba(21,58,92,0.15)]" />
+          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#7c858f] lg:text-[0.95rem] lg:tracking-[0.02em]">
+            ATAU HUBUNGKAN AKUN
+          </span>
+          <span className="h-px flex-1 bg-[rgba(21,58,92,0.15)]" />
+        </div>
+
+        <Button
+          type="button"
+          className="h-12 w-full rounded-xl bg-black text-base font-semibold text-white hover:bg-black/90 lg:h-[3.95rem] lg:text-[1.45rem]"
+        >
+          <TikTokIcon className="!h-[1em] !w-[1em] shrink-0" />
+          Hubungkan TikTok Shop
+        </Button>
+
+        <AuthBottomNav activeItem="login" />
+      </section>
+    </AuthShell>
   );
 }

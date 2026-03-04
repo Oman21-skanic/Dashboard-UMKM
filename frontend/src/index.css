@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -43,6 +44,14 @@
   --sidebar-ring: #3ba7f0;
 
   --radius: 1rem;
+
+  --auth-page-bg: #e9dfd1;
+  --auth-right-bg: #f2ede3;
+  --auth-tab-bg: #d8d9db;
+  --auth-input-bg: #ececee;
+  --auth-input-border: #d1d4db;
+  --auth-error-bg: rgba(230, 57, 70, 0.1);
+  --auth-error-border: rgba(230, 57, 70, 0.35);
 }
 
 @theme inline {
@@ -85,6 +94,13 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 0.25rem);
   --radius-2xl: calc(var(--radius) + 0.5rem);
+  --color-auth-page-bg: var(--auth-page-bg);
+  --color-auth-right-bg: var(--auth-right-bg);
+  --color-auth-tab-bg: var(--auth-tab-bg);
+  --color-auth-input-bg: var(--auth-input-bg);
+  --color-auth-input-border: var(--auth-input-border);
+  --color-auth-error-bg: var(--auth-error-bg);
+  --color-auth-error-border: var(--auth-error-border);
 }
 
 @layer base {
@@ -94,6 +110,66 @@
 
   body {
     @apply min-h-screen bg-background text-foreground antialiased;
-    font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-family: "Plus Jakarta Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+@layer components {
+  .auth-input {
+    @apply h-12 rounded-xl border px-3 text-base text-[#1f3d5b] shadow-none placeholder:text-[#767f8f] focus-visible:ring-2 focus-visible:ring-[#153a5c] focus-visible:ring-offset-0 md:text-base;
+    background-color: var(--auth-input-bg);
+    border-color: var(--auth-input-border);
+  }
+
+  .auth-field-label {
+    @apply mb-1.5 block text-sm font-semibold text-[#163a5c];
+  }
+
+  .auth-tab-shell {
+    @apply w-full rounded-2xl bg-[var(--auth-tab-bg)] p-1;
+  }
+
+  .auth-tab-item {
+    @apply flex w-full items-center justify-center rounded-[0.95rem] px-5 py-2 text-base font-semibold transition-colors;
+  }
+
+  .auth-tab-item-active {
+    @apply bg-[#123d62] text-[#f2efe8] shadow-[0_1px_2px_rgba(0,0,0,0.08)];
+  }
+
+  .auth-tab-item-inactive {
+    @apply text-[#2f5f87];
+  }
+
+  .auth-error {
+    @apply rounded-xl border px-3 py-2 text-sm text-danger;
+    background-color: var(--auth-error-bg);
+    border-color: var(--auth-error-border);
+  }
+
+  .auth-bottom-nav-item {
+    @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-[#c4d2df] transition-colors;
+  }
+
+  .auth-bottom-nav-item-active {
+    @apply bg-[#244f75] text-[#f1f5f9];
+  }
+
+  @media (min-width: 1024px) {
+    .auth-input {
+      @apply h-[3.55rem] px-4 text-[1.05rem];
+    }
+
+    .auth-field-label {
+      @apply text-[1.05rem];
+    }
+
+    .auth-tab-item {
+      @apply text-[1.1rem];
+    }
+
+    .auth-bottom-nav-item {
+      @apply px-5 py-2.5 text-[1.06rem];
+    }
   }
 }

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/Login.jsx";
 import RegisterPage from "./pages/Register.jsx";
 import DashboardPage from "./pages/dashboard.jsx";
+import PesananPage from "./pages/Pesanan.jsx";
 import ProtectedRoute from "./component/ProtectedRoute.jsx";
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/pesanan" element={<PesananPage />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
