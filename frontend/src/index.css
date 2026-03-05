@@ -126,7 +126,7 @@
   }
 
   .auth-tab-shell {
-    @apply w-full rounded-2xl bg-[var(--auth-tab-bg)] p-1;
+    @apply w-full rounded-2xl bg-auth-tab-bg p-1;
   }
 
   .auth-tab-item {

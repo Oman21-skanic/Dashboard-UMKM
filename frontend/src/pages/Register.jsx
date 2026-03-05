@@ -234,7 +234,7 @@ export default function Register() {
           type="button"
           className="h-12 w-full rounded-xl bg-black text-base font-semibold text-white hover:bg-black/90 lg:h-[3.95rem] lg:text-[1.45rem]"
         >
-          <TikTokIcon className="!h-[1em] !w-[1em] shrink-0" />
+          <TikTokIcon className="h-[1em]! w-[1em]! shrink-0" />
           Hubungkan TikTok Shop
         </Button>
 
