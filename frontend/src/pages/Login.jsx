@@ -42,10 +42,10 @@ export default function Login() {
     <AuthShell activeTab="login">
       <section className="space-y-5 lg:space-y-6">
         <div>
-          <h1 className="text-4xl leading-[1.1] font-semibold tracking-[-0.02em] text-[#123a5e] lg:text-[3.05rem]">
+          <h1 className="text-4xl leading-[1.1] font-semibold tracking-[-0.02em] text-[#123a5e] lg:text-[2.45rem]">
             Selamat datang kembali!
           </h1>
-          <p className="mt-1.5 text-base text-[#647387] lg:text-[1.6rem]">
+          <p className="mt-1.5 text-base text-[#647387] lg:text-[1.2rem]">
             Masuk untuk mengelola toko Anda hari ini.
           </p>
         </div>
@@ -91,7 +91,7 @@ export default function Login() {
                 )}
               </button>
             </div>
-            <p className="mt-1 text-right text-sm font-semibold text-[#153a5c] lg:text-[1.08rem]">
+            <p className="mt-1 text-right text-sm font-semibold text-[#153a5c] lg:text-[0.95rem]">
               Lupa Password?
             </p>
           </div>
@@ -101,7 +101,7 @@ export default function Login() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="h-12 w-full rounded-xl bg-[#123d62] text-base font-semibold text-[#f2efe8] hover:bg-[#103759] lg:h-[3.95rem] lg:text-[1.45rem]"
+            className="h-12 w-full rounded-xl bg-[#123d62] text-base font-semibold text-[#f2efe8] hover:bg-[#103759] lg:h-[3.35rem] lg:text-[1.15rem]"
           >
             {isLoading ? "Memproses..." : "Masuk Sekarang"}
             <ArrowRight className="h-[1em] w-[1em] shrink-0" />
@@ -110,7 +110,7 @@ export default function Login() {
 
         <div className="flex items-center gap-3 lg:gap-4">
           <span className="h-px flex-1 bg-[rgba(21,58,92,0.15)]" />
-          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#7c858f] lg:text-[0.95rem] lg:tracking-[0.02em]">
+          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#7c858f] lg:text-[0.82rem] lg:tracking-[0.02em]">
             ATAU HUBUNGKAN AKUN
           </span>
           <span className="h-px flex-1 bg-[rgba(21,58,92,0.15)]" />
@@ -118,7 +118,7 @@ export default function Login() {
 
         <Button
           type="button"
-          className="h-12 w-full rounded-xl bg-[#123d62] text-base font-semibold text-[#f2efe8] hover:bg-[#103759] lg:h-[3.95rem] lg:text-[1.45rem]"
+          className="h-12 w-full rounded-xl bg-black text-base font-semibold text-white hover:bg-black/90 lg:h-[3.35rem] lg:text-[1.15rem]"
         >
           <TikTokIcon className="h-[1em]! w-[1em]! shrink-0" />
           Hubungkan TikTok Shop
