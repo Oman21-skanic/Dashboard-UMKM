@@ -120,4 +120,17 @@ router.post('/refresh', (req, res) => {
   }
 });
 
+// FITUR AMBIL PROFIL USER
+const authenticateToken = require('../middleware/authenticateToken');
+router.get('/profile', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.user.id).select('-password');
+    if (!user) return res.status(404).json({ msg: 'User tidak ditemukan' });
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;
