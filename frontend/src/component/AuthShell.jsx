@@ -27,8 +27,8 @@ export default function AuthShell({
   showCommunityCard = true,
 }) {
   return (
-    <div className="min-h-screen bg-auth-page-bg)] p-3 sm:p-4 lg:p-5">
-      <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-350 overflow-hidden rounded-[1.75rem] bg-(--auth-right-bg) shadow-[0_30px_80px_rgba(0,0,0,0.42)] lg:grid-cols-[1.05fr_0.95fr]">
+    <div className="min-h-screen bg-[var(--auth-page-bg)] p-3 sm:p-4 lg:p-5">
+      <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-[1400px] overflow-hidden rounded-[1.75rem] bg-[var(--auth-right-bg)] shadow-[0_30px_80px_rgba(0,0,0,0.42)] lg:grid-cols-[1.05fr_0.95fr]">
         <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#10375a] px-12 py-11 text-[#f0f4f8] lg:flex">
           <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[rgba(119,157,187,0.18)]" />
           <div className="pointer-events-none absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-[rgba(119,157,187,0.2)]" />
@@ -38,16 +38,16 @@ export default function AuthShell({
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(255,255,255,0.18)]">
                 <Package className="h-6 w-6" />
               </div>
-              <p className="text-[2rem] leading-none font-semibold tracking-[-0.02em]">
+              <p className="text-[1.6rem] leading-none font-semibold tracking-[-0.02em]">
                 DashUMKM
               </p>
             </div>
 
-            <div className="max-w-132 space-y-5">
-              <h1 className="text-[3rem] leading-[1.08] font-semibold tracking-[-0.025em]">
+            <div className="max-w-[33rem] space-y-5">
+              <h1 className="text-[2.45rem] leading-[1.08] font-semibold tracking-[-0.025em]">
                 Kelola bisnis Anda lebih mudah dalam satu tempat
               </h1>
-              <p className="text-[1.05rem] leading-[1.45] text-[#b6c6d5]">
+              <p className="text-[0.94rem] leading-[1.45] text-[#b6c6d5]">
                 Kelola operasional toko online Anda dari satu platform
                 terintegrasi. Mudah, cepat, dan efisien.
               </p>
@@ -62,7 +62,7 @@ export default function AuthShell({
                       <Icon className="h-5 w-5 text-[#e6edf5]" />
                     </div>
                     <div>
-                      <p className="pt-2 text-[1.02rem] leading-tight text-[#eef4f9]">
+                      <p className="pt-2 text-[0.92rem] leading-tight text-[#eef4f9]">
                         {feature.title}
                       </p>
                     </div>
@@ -94,25 +94,25 @@ export default function AuthShell({
                       </span>
                     ))}
                   </div>
-                  <p className="text-sm text-[#a7bacd]">
-                    Bergabung dengan{" "}
-                    <span className="block text-[1.8rem] font-semibold text-[#eaf0f6]">
-                      10.000+ UMKM
-                    </span>
-                  </p>
+              <p className="text-xs text-[#a7bacd]">
+                Bergabung dengan{" "}
+                <span className="block text-[1.35rem] font-semibold text-[#eaf0f6]">
+                  10.000+ UMKM
+                </span>
+              </p>
                 </div>
               </div>
             ) : null}
           </div>
         </aside>
 
-        <main className="flex items-center justify-center bg-(--auth-right-bg) px-5 py-8 sm:px-8 lg:px-12">
-          <div className="w-full max-w-155 space-y-6">
+        <main className="flex items-center justify-center bg-[var(--auth-right-bg)] px-5 py-8 sm:px-8 lg:px-12">
+          <div className="w-full max-w-[620px] space-y-6">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#123d62] text-[#f2ede3]">
                 <Package className="h-6 w-6" />
               </div>
-              <p className="text-4xl font-bold tracking-[-0.01em] text-[#123d62]">
+              <p className="text-3xl font-bold tracking-[-0.01em] text-[#123d62] lg:text-[2.1rem]">
                 DashUMKM
               </p>
             </div>
