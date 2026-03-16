@@ -126,7 +126,7 @@
   }
 
   .auth-tab-shell {
-    @apply w-full rounded-2xl bg-[var(--auth-tab-bg)] p-1;
+    @apply w-full rounded-2xl bg-auth-tab-bg p-1;
   }
 
   .auth-tab-item {
@@ -157,19 +157,19 @@
 
   @media (min-width: 1024px) {
     .auth-input {
-      @apply h-[3.55rem] px-4 text-[1.05rem];
+      @apply h-12 px-3.5 text-[0.95rem];
     }
 
     .auth-field-label {
-      @apply text-[1.05rem];
+      @apply text-[0.95rem];
     }
 
     .auth-tab-item {
-      @apply text-[1.1rem];
+      @apply text-[1rem];
     }
 
     .auth-bottom-nav-item {
-      @apply px-5 py-2.5 text-[1.06rem];
+      @apply px-4 py-2 text-[0.95rem];
     }
   }
 }

@@ -38,16 +38,16 @@ export default function AuthShell({
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(255,255,255,0.18)]">
                 <Package className="h-6 w-6" />
               </div>
-              <p className="text-[2rem] leading-none font-semibold tracking-[-0.02em]">
+              <p className="text-[1.6rem] leading-none font-semibold tracking-[-0.02em]">
                 DashUMKM
               </p>
             </div>
 
             <div className="max-w-[33rem] space-y-5">
-              <h1 className="text-[3rem] leading-[1.08] font-semibold tracking-[-0.025em]">
+              <h1 className="text-[2.45rem] leading-[1.08] font-semibold tracking-[-0.025em]">
                 Kelola bisnis Anda lebih mudah dalam satu tempat
               </h1>
-              <p className="text-[1.05rem] leading-[1.45] text-[#b6c6d5]">
+              <p className="text-[0.94rem] leading-[1.45] text-[#b6c6d5]">
                 Kelola operasional toko online Anda dari satu platform
                 terintegrasi. Mudah, cepat, dan efisien.
               </p>
@@ -62,7 +62,7 @@ export default function AuthShell({
                       <Icon className="h-5 w-5 text-[#e6edf5]" />
                     </div>
                     <div>
-                      <p className="pt-2 text-[1.02rem] leading-tight text-[#eef4f9]">
+                      <p className="pt-2 text-[0.92rem] leading-tight text-[#eef4f9]">
                         {feature.title}
                       </p>
                     </div>
@@ -94,12 +94,12 @@ export default function AuthShell({
                       </span>
                     ))}
                   </div>
-                  <p className="text-sm text-[#a7bacd]">
-                    Bergabung dengan{" "}
-                    <span className="block text-[1.8rem] font-semibold text-[#eaf0f6]">
-                      10.000+ UMKM
-                    </span>
-                  </p>
+              <p className="text-xs text-[#a7bacd]">
+                Bergabung dengan{" "}
+                <span className="block text-[1.35rem] font-semibold text-[#eaf0f6]">
+                  10.000+ UMKM
+                </span>
+              </p>
                 </div>
               </div>
             ) : null}
@@ -112,7 +112,7 @@ export default function AuthShell({
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#123d62] text-[#f2ede3]">
                 <Package className="h-6 w-6" />
               </div>
-              <p className="text-4xl font-bold tracking-[-0.01em] text-[#123d62]">
+              <p className="text-3xl font-bold tracking-[-0.01em] text-[#123d62] lg:text-[2.1rem]">
                 DashUMKM
               </p>
             </div>
