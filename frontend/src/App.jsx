@@ -2,7 +2,10 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/Login.jsx";
 import RegisterPage from "./pages/Register.jsx";
 import DashboardPage from "./pages/dashboard.jsx";
+import InventoriPage from "./pages/Inventori.jsx";
 import PesananPage from "./pages/Pesanan.jsx";
+import AnalitikPage from "./pages/Analitik.jsx";
+import SetelanPage from "./pages/Setelan.jsx";
 import ProtectedRoute from "./component/ProtectedRoute.jsx";
 
 export default function App() {
@@ -16,6 +19,30 @@ export default function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analitik"
+        element={
+          <ProtectedRoute>
+            <AnalitikPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/inventori"
+        element={
+          <ProtectedRoute>
+            <InventoriPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/setelan"
+        element={
+          <ProtectedRoute>
+            <SetelanPage />
           </ProtectedRoute>
         }
       />
