@@ -42,7 +42,7 @@ export default function Login() {
     <AuthShell activeTab="login">
       <section className="space-y-5 lg:space-y-6">
         <div>
-          <h1 className="text-4xl leading-[1.1] font-semibold tracking-[-0.02em] text-[#123a5e] lg:text-[2.45rem]">
+          <h1 className="text-3xl leading-[1.1] font-semibold tracking-[-0.02em] text-[#123a5e] sm:text-4xl lg:text-[2.45rem]">
             Selamat datang kembali!
           </h1>
           <p className="mt-1.5 text-base text-[#647387] lg:text-[1.2rem]">
