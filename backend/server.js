@@ -19,6 +19,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/api/health', (req, res) => res.send('API is healthy'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/auth/tiktok', require('./routes/tiktokAuth'));
+app.use('/api/orders', require('./routes/orders'));
 
 // 3. Menjalankan Server
 const PORT = process.env.PORT || 5000;

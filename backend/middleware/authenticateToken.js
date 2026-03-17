@@ -6,7 +6,7 @@ function authenticateToken(req, res, next) {
 
     if (!token) return res.status(401).json({ msg: 'Akses ditolak, token tidak ada' });
 
-    jwt.verify(token, process.env.JWT_SECRET || 'secretkey', (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET || 'secret', (err, user) => {
         if (err) return res.status(403).json({ msg: 'Token tidak valid' });
         req.user = user;
         next();
