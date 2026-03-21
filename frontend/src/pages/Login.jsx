@@ -8,6 +8,8 @@ import { Input } from "@/component/ui/input";
 import { Button } from "@/component/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isTikTokLoading, setIsTikTokLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (event) => {
@@ -35,6 +38,27 @@ export default function Login() {
       setError(submitError.message || "Gagal masuk. Coba lagi.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Login dulu pakai email+password, lalu langsung connect TikTok
+  const handleTikTokConnect = async () => {
+    setError("");
+
+    if (!identifier.trim() || !password.trim()) {
+      setError("Isi Email dan Password dulu sebelum hubungkan TikTok.");
+      return;
+    }
+
+    setIsTikTokLoading(true);
+    try {
+      const data = await login(identifier, password);
+      // Setelah login berhasil, langsung redirect ke TikTok OAuth
+      const token = data.token;
+      window.location.href = `${API_URL}/api/auth/tiktok?token=${token}`;
+    } catch (submitError) {
+      setError(submitError.message || "Gagal masuk. Coba lagi.");
+      setIsTikTokLoading(false);
     }
   };
 
@@ -61,7 +85,7 @@ export default function Login() {
                 type="text"
                 placeholder="contoh@mail.com atau 0812..."
                 className="auth-input pl-11"
-                disabled={isLoading}
+                disabled={isLoading || isTikTokLoading}
               />
             </div>
           </div>
@@ -76,7 +100,7 @@ export default function Login() {
                 type={showPassword ? "text" : "password"}
                 placeholder="Masukkan password Anda"
                 className="auth-input pl-11 pr-11"
-                disabled={isLoading}
+                disabled={isLoading || isTikTokLoading}
               />
               <button
                 type="button"
@@ -100,7 +124,7 @@ export default function Login() {
 
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isTikTokLoading}
             className="h-12 w-full rounded-xl bg-[#123d62] text-base font-semibold text-[#f2efe8] hover:bg-[#103759] lg:h-[3.35rem] lg:text-[1.15rem]"
           >
             {isLoading ? "Memproses..." : "Masuk Sekarang"}
@@ -118,10 +142,21 @@ export default function Login() {
 
         <Button
           type="button"
-          className="h-12 w-full rounded-xl bg-black text-base font-semibold text-white hover:bg-black/90 lg:h-[3.35rem] lg:text-[1.15rem]"
+          onClick={handleTikTokConnect}
+          disabled={isLoading || isTikTokLoading}
+          className="h-12 w-full rounded-xl bg-black text-base font-semibold text-white hover:bg-black/90 disabled:opacity-60 disabled:cursor-not-allowed lg:h-[3.35rem] lg:text-[1.15rem]"
         >
-          <TikTokIcon className="h-[1em]! w-[1em]! shrink-0" />
-          Hubungkan TikTok Shop
+          {isTikTokLoading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Menghubungkan...
+            </>
+          ) : (
+            <>
+              <TikTokIcon className="h-[1em]! w-[1em]! shrink-0" />
+              Hubungkan TikTok Shop
+            </>
+          )}
         </Button>
 
         <AuthBottomNav activeItem="login" />
