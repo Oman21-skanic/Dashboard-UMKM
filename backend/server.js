@@ -48,6 +48,7 @@ app.use('/api/health', (req, res) => res.send('API is healthy'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/auth/tiktok', require('./routes/tiktokAuth'));
 app.use('/api/orders', require('./routes/orders'));
+app.use('/api/inventory', require('./routes/inventory'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
