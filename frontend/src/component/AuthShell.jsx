@@ -27,8 +27,8 @@ export default function AuthShell({
   showCommunityCard = true,
 }) {
   return (
-    <div className="min-h-screen bg-[var(--auth-page-bg)] p-3 sm:p-4 lg:p-5">
-      <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-[1400px] overflow-visible rounded-[1.75rem] bg-[var(--auth-right-bg)] shadow-[0_30px_80px_rgba(0,0,0,0.42)] lg:grid-cols-[1.05fr_0.95fr] lg:overflow-hidden">
+    <div className="min-h-screen bg-(--auth-page-bg) p-3 sm:p-4 lg:p-5">
+      <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-[1400px] overflow-visible rounded-[1.75rem] bg-(--auth-right-bg) shadow-[0_30px_80px_rgba(0,0,0,0.42)] lg:grid-cols-[1.05fr_0.95fr] lg:overflow-hidden">
         <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#10375a] px-12 py-11 text-[#f0f4f8] lg:flex">
           <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[rgba(119,157,187,0.18)]" />
           <div className="pointer-events-none absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-[rgba(119,157,187,0.2)]" />
@@ -43,7 +43,7 @@ export default function AuthShell({
               </p>
             </div>
 
-            <div className="max-w-[33rem] space-y-5">
+            <div className="max-w-132 space-y-5">
               <h1 className="text-[2.45rem] leading-[1.08] font-semibold tracking-[-0.025em]">
                 Kelola bisnis Anda lebih mudah dalam satu tempat
               </h1>
@@ -106,7 +106,7 @@ export default function AuthShell({
           </div>
         </aside>
 
-        <main className="flex items-start justify-center bg-[var(--auth-right-bg)] px-5 py-8 sm:px-8 lg:items-center lg:px-12">
+        <main className="flex items-start justify-center bg-(--auth-right-bg) px-5 py-8 sm:px-8 lg:items-center lg:px-12">
           <div className="w-full max-w-[620px] space-y-6">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#123d62] text-[#f2ede3]">
