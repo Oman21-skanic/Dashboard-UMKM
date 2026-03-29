@@ -323,7 +323,7 @@ export default function Dashboard() {
                 <Sheet>
                   <SheetTrigger asChild>
                     <button
-                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b] hover:bg-[#f8fafc] active:scale-95 transition-all"
                       aria-label="Buka menu"
                     >
                       <Menu className="h-4 w-4" />
@@ -356,14 +356,14 @@ export default function Dashboard() {
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
                   <Input
                     placeholder="Cari platform..."
-                    className="h-10 w-64 rounded-xl border border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3]"
+                    className="h-11 w-64 rounded-xl border border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3] transition-colors"
                   />
                 </div>
-                <button className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]">
+                <button className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b] hover:bg-[#f8fafc] active:scale-95 transition-all">
                   <Bell className="h-4 w-4" />
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-[#fffcf5] bg-[#ef4444]" />
+                  <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-[#fffcf5] bg-[#ef4444]" />
                 </button>
-                <Button className="hidden h-10 rounded-xl bg-[#4e7da9] px-4 text-sm font-semibold text-white hover:bg-[#3b6d9c] md:inline-flex">
+                <Button className="hidden h-11 rounded-xl bg-[#4e7da9] px-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-[#3b6d9c] hover:shadow-lg active:scale-95 transition-all duration-200 md:inline-flex">
                   Sinkronisasi Data
                 </Button>
               </div>
@@ -374,10 +374,10 @@ export default function Dashboard() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
                 <Input
                   placeholder="Cari platform..."
-                  className="h-9 w-full rounded-xl border border-[#e2e8f0] bg-white/90 pl-9 text-sm focus-visible:ring-[#3bb0f3]"
+                  className="h-11 w-full rounded-xl border border-[#e2e8f0] bg-white/90 pl-9 text-sm focus-visible:ring-[#3bb0f3] transition-colors"
                 />
               </div>
-              <Button className="mt-3 h-9 w-full rounded-xl bg-[#4e7da9] text-xs font-semibold text-white hover:bg-[#3b6d9c]">
+              <Button className="mt-3 h-11 w-full rounded-xl bg-[#4e7da9] text-xs font-semibold text-white hover:-translate-y-0.5 hover:bg-[#3b6d9c] hover:shadow-lg active:scale-95 transition-all duration-200">
                 Sinkronisasi Data
               </Button>
             </div>
@@ -419,7 +419,7 @@ export default function Dashboard() {
                     return (
                       <Card
                         key={card.label}
-                        className="border-[#f1f5f9] shadow-[0_12px_30px_rgba(15,42,67,0.08)]"
+                        className="border-[#f1f5f9] shadow-[0_12px_30px_rgba(15,42,67,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group"
                       >
                         <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                           <div
@@ -451,7 +451,7 @@ export default function Dashboard() {
 
                 {/* Revenue Trend + Platform Cards */}
                 <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
+                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group">
                     <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
                       <div>
                         <CardTitle className="text-lg font-semibold text-[#14293d]">
@@ -512,7 +512,7 @@ export default function Dashboard() {
                       return (
                         <Card
                           key={platform.name}
-                          className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]"
+                          className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group"
                         >
                           <CardHeader className="flex-row items-start justify-between space-y-0 pb-3">
                             <div className="flex items-center gap-3">
@@ -589,7 +589,7 @@ export default function Dashboard() {
 
                 {/* Recent Orders + Top Products */}
                 <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
+                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group">
                     <CardHeader className="flex-row items-center justify-between space-y-0">
                       <div>
                         <CardTitle className="text-base font-semibold text-[#14293d]">
@@ -699,7 +699,7 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
+                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group">
                     <CardHeader>
                       <CardTitle className="text-base font-semibold text-[#14293d]">
                         Produk Terlaris
@@ -739,7 +739,7 @@ export default function Dashboard() {
                       <Button
                         variant="outline"
                         onClick={() => navigate("/inventori")}
-                        className="h-9 w-full rounded-xl border-[#e2e8f0] text-xs font-semibold text-[#475569]"
+                        className="h-11 w-full rounded-xl border-[#e2e8f0] text-xs font-semibold text-[#475569] hover:bg-[#f8fafc] active:scale-95 transition-all"
                       >
                         Lihat Inventory
                       </Button>
@@ -749,7 +749,7 @@ export default function Dashboard() {
 
                 {/* Source Comparison */}
                 <section>
-                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
+                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group">
                     <CardHeader className="flex-row items-center justify-between space-y-0">
                       <div>
                         <CardTitle className="text-base font-semibold text-[#14293d]">

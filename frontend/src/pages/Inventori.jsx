@@ -184,7 +184,7 @@ export default function Inventori() {
                 <Sheet>
                   <SheetTrigger asChild>
                     <button
-                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b] hover:bg-[#f8fafc] active:scale-95 transition-all"
                       aria-label="Buka menu"
                     >
                       <Menu className="h-4 w-4" />
@@ -219,16 +219,16 @@ export default function Inventori() {
                     placeholder="Cari SKU, nama produk..."
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                    className="h-10 w-72 rounded-xl border border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3]"
+                    className="h-11 w-72 rounded-xl border border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3] transition-colors"
                   />
                 </div>
-                <button className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]">
+                <button className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b] hover:bg-[#f8fafc] active:scale-95 transition-all">
                   <Bell className="h-4 w-4" />
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-[#ef4444]" />
+                  <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-white bg-[#ef4444]" />
                 </button>
                 <Button
                   onClick={() => setShowCreateModal(true)}
-                  className="h-10 rounded-xl bg-[#4e7da9] px-4 text-sm font-semibold text-white hover:bg-[#3b6d9c]"
+                  className="h-11 rounded-xl bg-[#4e7da9] px-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-[#3b6d9c] hover:shadow-lg active:scale-95 transition-all duration-200"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Tambah Produk
@@ -243,17 +243,17 @@ export default function Inventori() {
                   placeholder="Cari SKU, nama produk..."
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  className="h-9 w-full rounded-xl border border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3]"
+                  className="h-11 w-full rounded-xl border border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3] transition-colors"
                 />
               </div>
               <div className="flex items-center gap-3">
-                <button className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]">
+                <button className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b] hover:bg-[#f8fafc] active:scale-95 transition-all">
                   <Bell className="h-4 w-4" />
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-[#ef4444]" />
+                  <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-white bg-[#ef4444]" />
                 </button>
                 <Button
                   onClick={() => setShowCreateModal(true)}
-                  className="h-9 flex-1 rounded-xl bg-[#4e7da9] text-xs font-semibold text-white hover:bg-[#3b6d9c]"
+                  className="h-11 flex-1 rounded-xl bg-[#4e7da9] text-xs font-semibold text-white hover:-translate-y-0.5 hover:bg-[#3b6d9c] hover:shadow-lg active:scale-95 transition-all duration-200"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Tambah Produk
@@ -282,7 +282,7 @@ export default function Inventori() {
                 return (
                   <Card
                     key={card.label}
-                    className="border-[#f1f5f9] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+                    className="border-[#f1f5f9] shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-md group"
                   >
                     <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                       <div
@@ -311,7 +311,7 @@ export default function Inventori() {
             </section>
 
             {/* Product List */}
-            <Card className="border-[#f1f5f9] shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+            <Card className="border-[#f1f5f9] shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-md">
               <CardHeader className="flex flex-wrap items-center justify-between gap-3 space-y-0">
                 <div className="flex flex-wrap items-center gap-4">
                   <CardTitle className="text-base font-semibold text-[#1e293b]">
@@ -336,7 +336,7 @@ export default function Inventori() {
                 </div>
                 <Button
                   variant="outline"
-                  className="h-9 rounded-xl border-[#e2e8f0] text-xs font-semibold text-[#3182ce]"
+                  className="h-11 rounded-xl border-[#e2e8f0] text-xs font-semibold text-[#3182ce] hover:bg-[#f8fafc] active:scale-95 transition-all"
                 >
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
                   Filter Lanjutan
@@ -360,7 +360,7 @@ export default function Inventori() {
                       {paginated.map((product) => (
                         <div
                           key={product._id}
-                          className="rounded-xl border border-[#f1f5f9] bg-white p-4 shadow-[0_8px_20px_rgba(15,42,67,0.08)]"
+                          className="rounded-xl border border-[#f1f5f9] bg-white p-4 shadow-[0_8px_20px_rgba(15,42,67,0.08)] transition-transform duration-300 hover:-translate-y-1"
                         >
                           <div className="flex items-start gap-3">
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#f1f5f9] text-lg font-bold text-[#94a3b8]">

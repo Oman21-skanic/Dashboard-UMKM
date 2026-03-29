@@ -215,7 +215,7 @@ export default function Register() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="h-12 w-full rounded-xl bg-[#123d62] text-base font-semibold text-[#f2efe8] hover:bg-[#103759] lg:h-[3.35rem] lg:text-[1.15rem]"
+            className="h-12 w-full rounded-xl bg-[#123d62] text-base font-semibold text-[#f2efe8] hover:-translate-y-0.5 hover:bg-[#103759] hover:shadow-lg active:scale-[0.98] transition-all duration-200 lg:h-[3.35rem] lg:text-[1.15rem]"
           >
             {isLoading ? "Memproses..." : "Daftar Sekarang"}
             <ArrowRight className="h-[1em] w-[1em] shrink-0" />
@@ -232,7 +232,7 @@ export default function Register() {
 
         <Button
           type="button"
-          className="h-12 w-full rounded-xl bg-black text-base font-semibold text-white hover:bg-black/90 lg:h-[3.35rem] lg:text-[1.15rem]"
+          className="h-12 w-full rounded-xl bg-black text-base font-semibold text-white hover:-translate-y-0.5 hover:bg-black/90 hover:shadow-lg active:scale-[0.98] transition-all duration-200 lg:h-[3.35rem] lg:text-[1.15rem]"
         >
           <TikTokIcon className="h-[1em]! w-[1em]! shrink-0" />
           Hubungkan TikTok Shop
