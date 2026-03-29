@@ -1,24 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-function useInitialSearchParamMessage() {
+function useParamMessage() {
   const [searchParams] = useSearchParams();
-
-  // Compute message from URL params — runs once and is stable
   return useMemo(() => {
-    const success = searchParams.get("success");
-    const error = searchParams.get("error");
-
-    if (success === "tiktok_connected") {
-      return { type: "success", text: "✅ TikTok berhasil terhubung!", connected: true };
-    } else if (error === "tiktok_auth_rejected") {
-      return { type: "error", text: "❌ Kamu membatalkan koneksi TikTok.", connected: false };
-    } else if (error === "token_exchange_failed") {
-      return { type: "error", text: "❌ Koneksi TikTok gagal. Coba lagi.", connected: false };
-    }
+    const s = searchParams.get("success");
+    const e = searchParams.get("error");
+    if (s === "tiktok_connected") return { type: "success", text: "✅ TikTok berhasil terhubung!", connected: true };
+    if (e === "tiktok_auth_rejected") return { type: "error", text: "❌ Kamu membatalkan koneksi TikTok.", connected: false };
+    if (e === "token_exchange_failed") return { type: "error", text: "❌ Koneksi TikTok gagal. Coba lagi.", connected: false };
     return null;
   }, [searchParams]);
 }
@@ -26,76 +20,49 @@ function useInitialSearchParamMessage() {
 export default function ChannelsPage() {
   const { getToken } = useAuth();
   const navigate = useNavigate();
+  const paramMsg = useParamMessage();
 
-  // Derive initial message from URL search params (before component mounts)
-  const paramMessage = useInitialSearchParamMessage();
-
-  const [tiktokStatus, setTiktokStatus] = useState(() =>
-    paramMessage?.connected ? "connected" : null
-  );
+  const [tiktokStatus, setTiktokStatus] = useState(() => paramMsg?.connected ? "connected" : null);
   const [tiktokShopId, setTiktokShopId] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [message, setMessage] = useState(() => paramMessage);
+  const [message, setMessage] = useState(() => paramMsg);
 
-  // Clean up URL params on mount if needed
-  const hasCleanedUrl = useRef(false);
+  const cleaned = useRef(false);
   useEffect(() => {
-    if (paramMessage && !hasCleanedUrl.current) {
-      hasCleanedUrl.current = true;
+    if (paramMsg && !cleaned.current) {
+      cleaned.current = true;
       navigate("/dashboard/channels", { replace: true });
     }
-  }, [paramMessage, navigate]);
+  }, [paramMsg, navigate]);
 
-  // Fetch TikTok connection status from backend
   useEffect(() => {
-    let isMounted = true;
-
+    let ignore = false;
     const fetchProfile = async () => {
       try {
         const token = getToken();
-        if (!token) {
-          if (isMounted && !paramMessage?.connected) {
-            setTiktokStatus("disconnected");
-          }
-          return;
-        }
-        
-        const res = await fetch(`${API_URL}/api/auth/profile`, {
-          headers: { "Authorization": `Bearer ${token}` },
+        if (!token) return;
+        const { data } = await axios.get(`${API_URL}/api/auth/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await res.json();
-
-        if (isMounted) {
-          const tiktokChannel = data.channels?.find(ch => ch.platform === "tiktok");
-          if (tiktokChannel) {
-            setTiktokStatus("connected");
-            setTiktokShopId(tiktokChannel.tiktokShopId);
-          } else if (!paramMessage?.connected) {
-            setTiktokStatus("disconnected");
-          }
-        }
-      } catch (err) {
-        console.error(err);
-        if (isMounted && !paramMessage?.connected) {
+        if (ignore) return;
+        const ch = data.channels?.find(c => c.platform === "tiktok");
+        if (ch) {
+          setTiktokStatus("connected");
+          setTiktokShopId(ch.tiktokShopId);
+        } else if (!paramMsg?.connected) {
           setTiktokStatus("disconnected");
         }
+      } catch {
+        if (!ignore && !paramMsg?.connected) setTiktokStatus("disconnected");
       }
     };
-
     fetchProfile();
+    return () => { ignore = true; };
+  }, [getToken, paramMsg]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [getToken, paramMessage]);
-
-  // Handle click Connect TikTok
-  const handleConnectTikTok = () => {
+  const handleConnect = () => {
     const token = getToken();
-    if (!token) {
-      setMessage({ type: "error", text: "❌ Kamu harus login dulu." });
-      return;
-    }
+    if (!token) { setMessage({ type: "error", text: "❌ Kamu harus login dulu." }); return; }
     setIsConnecting(true);
     window.location.href = `${API_URL}/api/auth/tiktok?token=${token}`;
   };
@@ -106,18 +73,12 @@ export default function ChannelsPage() {
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Kelola Channel</h1>
         <p className="text-gray-500 mb-8">Hubungkan toko online kamu di sini.</p>
 
-        {/* Notifikasi success/error */}
         {message && (
           <div className={`mb-6 px-4 py-3 rounded-lg text-sm font-medium ${
-            message.type === "success"
-              ? "bg-green-100 text-green-700 border border-green-300"
-              : "bg-red-100 text-red-700 border border-red-300"
-          }`}>
-            {message.text}
-          </div>
+            message.type === "success" ? "bg-green-100 text-green-700 border border-green-300" : "bg-red-100 text-red-700 border border-red-300"
+          }`}>{message.text}</div>
         )}
 
-        {/* Card TikTok */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -128,49 +89,25 @@ export default function ChannelsPage() {
               </div>
               <div>
                 <h2 className="font-semibold text-gray-800">TikTok Shop</h2>
-                {tiktokStatus === "connected" && tiktokShopId ? (
-                  <p className="text-sm text-gray-500">ID: {tiktokShopId}</p>
-                ) : (
-                  <p className="text-sm text-gray-500">Belum terhubung</p>
-                )}
+                {tiktokStatus === "connected" && tiktokShopId
+                  ? <p className="text-sm text-gray-500">ID: {tiktokShopId}</p>
+                  : <p className="text-sm text-gray-500">Belum terhubung</p>}
               </div>
             </div>
-
             <div>
-              {tiktokStatus === null && (
-                <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-              )}
-
-              {tiktokStatus === "connected" && (
-                <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-sm font-medium px-3 py-1.5 rounded-full">
-                  ✅ Terhubung
-                </span>
-              )}
-
+              {tiktokStatus === null && <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />}
+              {tiktokStatus === "connected" && <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-sm font-medium px-3 py-1.5 rounded-full">✅ Terhubung</span>}
               {tiktokStatus === "disconnected" && (
-                <button
-                  onClick={handleConnectTikTok}
-                  disabled={isConnecting}
-                  className="bg-black text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {isConnecting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Menghubungkan...
-                    </>
-                  ) : (
-                    "Hubungkan TikTok"
-                  )}
+                <button onClick={handleConnect} disabled={isConnecting}
+                  className="bg-black text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+                  {isConnecting ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Menghubungkan...</> : "Hubungkan TikTok"}
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="mt-6 text-sm text-gray-500 hover:text-gray-700 transition"
-        >
+        <button onClick={() => navigate("/dashboard")} className="mt-6 text-sm text-gray-500 hover:text-gray-700 transition">
           ← Kembali ke Dashboard
         </button>
       </div>

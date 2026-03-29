@@ -33,13 +33,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/component/ui/card";
 import { Input } from "@/component/ui/input";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/component/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiGet } from "@/api/apiClient";
+import api from "@/api/apiClient";
 
 const statusTone = {
-  Pending: "bg-[#fff2e7] text-[#f97316]",
-  Processing: "bg-[#eaf3fc] text-[#1c4f7a]",
-  Shipped: "bg-[#eaf3fc] text-[#1c4f7a]",
-  Delivered: "bg-[#e7f7ef] text-[#1f9d6a]",
+  UNPAID: "bg-[#fee2e2] text-[#ef4444]",
+  AWAITING_SHIPMENT: "bg-[#fff2e7] text-[#f97316]",
+  IN_TRANSIT: "bg-[#eaf3fc] text-[#1c4f7a]",
+  DELIVERED: "bg-[#e7f7ef] text-[#1f9d6a]",
+  COMPLETED: "bg-[#ecfdf5] text-[#10b981]",
+  CANCELLED: "bg-[#f1f5f9] text-[#64748b]",
+};
+
+const STATUS_LABEL = {
+  UNPAID: "Belum Bayar", AWAITING_SHIPMENT: "Menunggu Kirim",
+  IN_TRANSIT: "Dalam Perjalanan", DELIVERED: "Diterima",
+  COMPLETED: "Selesai", CANCELLED: "Dibatalkan",
 };
 
 const platformCards = [
@@ -101,7 +109,7 @@ export default function Dashboard() {
   // Fetch real data
   const fetchOrders = useCallback(async () => {
     try {
-      const data = await apiGet("/api/orders");
+      const { data } = await api.get("/api/orders");
       setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Fetch orders error:", err);
@@ -112,7 +120,7 @@ export default function Dashboard() {
 
   const fetchInventory = useCallback(async () => {
     try {
-      const data = await apiGet("/api/inventory");
+      const { data } = await api.get("/api/inventory");
       setInventory(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Fetch inventory error:", err);
@@ -127,7 +135,7 @@ export default function Dashboard() {
   }, [fetchOrders, fetchInventory]);
 
   // ── Computed KPIs ──
-  const totalPenjualan = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const totalPenjualan = orders.reduce((sum, o) => sum + (o.payment_info?.total_amount || 0), 0);
   const totalPesanan = orders.length;
   const totalProduk = inventory.length;
 
@@ -150,7 +158,7 @@ export default function Dashboard() {
     {
       label: "Total Pesanan",
       value: totalPesanan.toLocaleString("id-ID"),
-      change: orders.filter((o) => o.status === "Delivered").length + " selesai",
+      change: orders.filter((o) => o.order_status === "DELIVERED" || o.order_status === "COMPLETED").length + " selesai",
       description: "Pesanan terdaftar",
       icon: ShoppingCart,
       iconStyle: "bg-[#e7f7ef] text-[#1f9d6a]",
@@ -168,11 +176,11 @@ export default function Dashboard() {
     {
       label: "Total Produk",
       value: totalProduk.toLocaleString("id-ID"),
-      change: `${inventory.filter((i) => i.stock <= 10).length} stok menipis`,
+      change: `${inventory.filter((i) => (i.skus || []).reduce((s, sk) => s + (sk.stock_info?.available_stock || 0), 0) <= 10).length} stok menipis`,
       description: "Produk di inventory",
       icon: Users,
       iconStyle: "bg-[#f1eaff] text-[#7c3aed]",
-      changeStyle: inventory.filter((i) => i.stock <= 10).length > 0
+      changeStyle: inventory.filter((i) => (i.skus || []).reduce((s, sk) => s + (sk.stock_info?.available_stock || 0), 0) <= 10).length > 0
         ? "bg-[#fff2e7] text-[#f97316]"
         : "bg-[#e7f7ef] text-[#1f9d6a]",
     },
@@ -189,7 +197,7 @@ export default function Dashboard() {
     orders.forEach((order) => {
       const d = new Date(order.createdAt);
       if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-        data[d.getDate() - 1].value += order.totalAmount || 0;
+        data[d.getDate() - 1].value += order.payment_info?.total_amount || 0;
       }
     });
     // Normalize to millions for chart readability
@@ -205,7 +213,7 @@ export default function Dashboard() {
     .slice(0, 5)
     .map((o) => ({
       _id: o._id,
-      name: o.customerName,
+      name: o.shipping_info?.buyer_name || "—",
       platform: o.source || "Manual",
       time: new Date(o.createdAt).toLocaleDateString("id-ID", {
         day: "numeric",
@@ -213,16 +221,17 @@ export default function Dashboard() {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      status: o.status,
-      amount: `Rp${(o.totalAmount || 0).toLocaleString("id-ID")}`,
+      status: o.order_status,
+      statusLabel: STATUS_LABEL[o.order_status] || o.order_status,
+      amount: `Rp${(o.payment_info?.total_amount || 0).toLocaleString("id-ID")}`,
     }));
 
   // ── Top Products (by order items frequency) ──
   const topProducts = (() => {
     const productMap = {};
     orders.forEach((o) => {
-      (o.items || []).forEach((item) => {
-        const key = item.productName || "Unknown";
+      (o.item_list || []).forEach((item) => {
+        const key = item.product_name || "Unknown";
         if (!productMap[key]) productMap[key] = { count: 0, revenue: 0 };
         productMap[key].count += item.quantity || 0;
         productMap[key].revenue += item.subtotal || 0;
@@ -240,25 +249,27 @@ export default function Dashboard() {
 
   // ── Logistics ──
   const statusCounts = {
-    Pending: orders.filter((o) => o.status === "Pending").length,
-    Processing: orders.filter((o) => o.status === "Processing").length,
-    Shipped: orders.filter((o) => o.status === "Shipped").length,
-    Delivered: orders.filter((o) => o.status === "Delivered").length,
+    UNPAID: orders.filter((o) => o.order_status === "UNPAID").length,
+    AWAITING_SHIPMENT: orders.filter((o) => o.order_status === "AWAITING_SHIPMENT").length,
+    IN_TRANSIT: orders.filter((o) => o.order_status === "IN_TRANSIT").length,
+    DELIVERED: orders.filter((o) => o.order_status === "DELIVERED").length,
+    COMPLETED: orders.filter((o) => o.order_status === "COMPLETED").length,
+    CANCELLED: orders.filter((o) => o.order_status === "CANCELLED").length,
   };
 
   const logisticsSummary = [
     {
       label: "Dalam Perjalanan",
-      detail: `${statusCounts.Shipped} Paket sedang dikirim kurir`,
-      percent: totalPesanan > 0 ? ((statusCounts.Shipped / totalPesanan) * 100).toFixed(1) : 0,
+      detail: `${statusCounts.IN_TRANSIT} Paket sedang dikirim kurir`,
+      percent: totalPesanan > 0 ? ((statusCounts.IN_TRANSIT / totalPesanan) * 100).toFixed(1) : 0,
       color: "#102e4a",
       icon: Truck,
       iconStyle: "bg-[#dbeafe] text-[#1d4ed8]",
     },
     {
       label: "Diterima Pembeli",
-      detail: `${statusCounts.Delivered} Paket telah sampai tujuan`,
-      percent: totalPesanan > 0 ? ((statusCounts.Delivered / totalPesanan) * 100).toFixed(1) : 0,
+      detail: `${statusCounts.DELIVERED + statusCounts.COMPLETED} Paket telah sampai tujuan`,
+      percent: totalPesanan > 0 ? (((statusCounts.DELIVERED + statusCounts.COMPLETED) / totalPesanan) * 100).toFixed(1) : 0,
       color: "#059669",
       icon: CheckCircle2,
       iconStyle: "bg-[#d1fae5] text-[#059669]",
@@ -266,10 +277,10 @@ export default function Dashboard() {
   ];
 
   const statusLogistics = [
-    { name: "Delivered", value: statusCounts.Delivered, color: "#102e4a" },
-    { name: "Shipped", value: statusCounts.Shipped, color: "#38bdf8" },
-    { name: "Processing", value: statusCounts.Processing, color: "#f97316" },
-    { name: "Pending", value: statusCounts.Pending, color: "#facc15" },
+    { name: "Diterima", value: statusCounts.DELIVERED + statusCounts.COMPLETED, color: "#102e4a" },
+    { name: "Dalam Perjalanan", value: statusCounts.IN_TRANSIT, color: "#38bdf8" },
+    { name: "Menunggu Kirim", value: statusCounts.AWAITING_SHIPMENT, color: "#f97316" },
+    { name: "Belum Bayar", value: statusCounts.UNPAID, color: "#facc15" },
   ].filter((s) => s.value > 0);
 
   // ── Comparison data (daily orders this week) ──
@@ -650,7 +661,7 @@ export default function Dashboard() {
                                         statusTone[order.status] || "bg-gray-100 text-gray-600"
                                       }`}
                                     >
-                                      {order.status}
+                                      {order.statusLabel}
                                     </span>
                                   </div>
                                   <span className="text-right text-sm font-semibold text-[#14293d]">
@@ -682,7 +693,7 @@ export default function Dashboard() {
                                       statusTone[order.status] || "bg-gray-100 text-gray-600"
                                     }`}
                                   >
-                                    {order.status}
+                                    {order.statusLabel}
                                   </span>
                                 </div>
                                 <div className="mt-3 flex items-center justify-between text-xs text-[#7c8ca0]">

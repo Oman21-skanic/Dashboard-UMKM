@@ -32,7 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/component/ui/card";
 import { Input } from "@/component/ui/input";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/component/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiGet } from "@/api/apiClient";
+import api from "@/api/apiClient";
 
 export default function Analitik() {
   const { user, logout } = useAuth();
@@ -58,12 +58,12 @@ export default function Analitik() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [ordersData, inventoryData] = await Promise.all([
-        apiGet("/api/orders"),
-        apiGet("/api/inventory"),
+      const [ordersRes, inventoryRes] = await Promise.all([
+        api.get("/api/orders"),
+        api.get("/api/inventory"),
       ]);
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
-      setInventory(Array.isArray(inventoryData) ? inventoryData : []);
+      setOrders(Array.isArray(ordersRes.data) ? ordersRes.data : []);
+      setInventory(Array.isArray(inventoryRes.data) ? inventoryRes.data : []);
     } catch (err) {
       console.error("Fetch analytics error:", err);
     } finally {
@@ -76,7 +76,7 @@ export default function Analitik() {
   }, [fetchData]);
 
   // ── Computed Stats ──
-  const totalPendapatan = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const totalPendapatan = orders.reduce((sum, o) => sum + (o.payment_info?.total_amount || 0), 0);
   const totalPesanan = orders.length;
   const rataRataOrder = totalPesanan > 0 ? Math.round(totalPendapatan / totalPesanan) : 0;
   const totalProduk = inventory.length;
@@ -99,7 +99,7 @@ export default function Analitik() {
     {
       label: "Total Pesanan",
       value: totalPesanan.toLocaleString("id-ID"),
-      change: `${orders.filter((o) => o.status === "Delivered").length} selesai`,
+      change: `${orders.filter((o) => o.order_status === "DELIVERED" || o.order_status === "COMPLETED").length} selesai`,
       tone: "bg-[#e7f7ef] text-[#1f9d6a]",
       iconBg: "bg-[#e7f7ef] text-[#1f9d6a]",
       icon: ShoppingCart,
@@ -115,8 +115,8 @@ export default function Analitik() {
     {
       label: "Total Produk",
       value: totalProduk.toLocaleString("id-ID"),
-      change: `${inventory.filter((i) => i.stock <= 10).length} stok menipis`,
-      tone: inventory.filter((i) => i.stock <= 10).length > 0
+      change: `${inventory.filter((i) => (i.skus || []).reduce((s, sk) => s + (sk.stock_info?.available_stock || 0), 0) <= 10).length} stok menipis`,
+      tone: inventory.filter((i) => (i.skus || []).reduce((s, sk) => s + (sk.stock_info?.available_stock || 0), 0) <= 10).length > 0
         ? "bg-[#fff2e7] text-[#f97316]"
         : "bg-[#e7f7ef] text-[#1f9d6a]",
       iconBg: "bg-[#ffe6ee] text-[#e11d48]",
@@ -132,7 +132,7 @@ export default function Analitik() {
     orders.forEach((o) => {
       const d = new Date(o.createdAt);
       if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-        data[d.getDate() - 1].value += o.totalAmount || 0;
+        data[d.getDate() - 1].value += o.payment_info?.total_amount || 0;
       }
     });
     return data.map((d) => ({ ...d, value: Math.round(d.value / 1000) }));
@@ -145,8 +145,8 @@ export default function Analitik() {
   const topProducts = (() => {
     const map = {};
     orders.forEach((o) => {
-      (o.items || []).forEach((item) => {
-        const key = item.productName || "Unknown";
+      (o.item_list || []).forEach((item) => {
+        const key = item.product_name || "Unknown";
         if (!map[key]) map[key] = { revenue: 0, count: 0 };
         map[key].revenue += item.subtotal || 0;
         map[key].count += item.quantity || 0;
@@ -168,17 +168,19 @@ export default function Analitik() {
   // ── Order Status ──
   const orderStatusData = (() => {
     const counts = {
-      Delivered: orders.filter((o) => o.status === "Delivered").length,
-      Shipped: orders.filter((o) => o.status === "Shipped").length,
-      Processing: orders.filter((o) => o.status === "Processing").length,
-      Pending: orders.filter((o) => o.status === "Pending").length,
+      DELIVERED: orders.filter((o) => o.order_status === "DELIVERED" || o.order_status === "COMPLETED").length,
+      IN_TRANSIT: orders.filter((o) => o.order_status === "IN_TRANSIT").length,
+      AWAITING_SHIPMENT: orders.filter((o) => o.order_status === "AWAITING_SHIPMENT").length,
+      UNPAID: orders.filter((o) => o.order_status === "UNPAID").length,
+      CANCELLED: orders.filter((o) => o.order_status === "CANCELLED").length,
     };
     const total = Math.max(totalPesanan, 1);
     return [
-      { name: "Selesai", value: parseFloat(((counts.Delivered / total) * 100).toFixed(1)), color: "#3b82f6", raw: counts.Delivered },
-      { name: "Dikirim", value: parseFloat(((counts.Shipped / total) * 100).toFixed(1)), color: "#0f2a43", raw: counts.Shipped },
-      { name: "Diproses", value: parseFloat(((counts.Processing / total) * 100).toFixed(1)), color: "#f97316", raw: counts.Processing },
-      { name: "Pending", value: parseFloat(((counts.Pending / total) * 100).toFixed(1)), color: "#facc15", raw: counts.Pending },
+      { name: "Selesai", value: parseFloat(((counts.DELIVERED / total) * 100).toFixed(1)), color: "#3b82f6", raw: counts.DELIVERED },
+      { name: "Dalam Perjalanan", value: parseFloat(((counts.IN_TRANSIT / total) * 100).toFixed(1)), color: "#0f2a43", raw: counts.IN_TRANSIT },
+      { name: "Menunggu Kirim", value: parseFloat(((counts.AWAITING_SHIPMENT / total) * 100).toFixed(1)), color: "#f97316", raw: counts.AWAITING_SHIPMENT },
+      { name: "Belum Bayar", value: parseFloat(((counts.UNPAID / total) * 100).toFixed(1)), color: "#facc15", raw: counts.UNPAID },
+      { name: "Dibatalkan", value: parseFloat(((counts.CANCELLED / total) * 100).toFixed(1)), color: "#94a3b8", raw: counts.CANCELLED },
     ].filter((s) => s.raw > 0);
   })();
 
@@ -187,7 +189,7 @@ export default function Analitik() {
     const sources = { Manual: 0, TikTok: 0, Instagram: 0, Tokopedia: 0 };
     orders.forEach((o) => {
       const src = o.source || "Manual";
-      if (sources[src] !== undefined) sources[src] += o.totalAmount || 0;
+      if (sources[src] !== undefined) sources[src] += o.payment_info?.total_amount || 0;
     });
     const maxVal = Math.max(...Object.values(sources), 1);
     const icons = { Manual: ShoppingBag, TikTok: TikTokIcon, Instagram: Instagram, Tokopedia: Store };
