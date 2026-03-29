@@ -15,25 +15,34 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // POST buat order baru
+const { deductStock } = require('../utils/inventoryHelper');
+
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { customerName, customerPhone, customerAddress, items, notes, source } = req.body;
+    const { order_id, buyer_email, buyer_message, payment_info, shipping_info, item_list, source, notes } = req.body;
 
-    if (!customerName || !customerPhone || !customerAddress || !items || items.length === 0) {
+    if (!shipping_info || !shipping_info.buyer_name || !item_list || item_list.length === 0 || !payment_info || payment_info.total_amount == null) {
       return res.status(400).json({ msg: 'Semua field wajib diisi' });
     }
 
-    const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
+    // OTOMATISASI: Kurangi stok sebelum menyimpan order
+    const stockResult = await deductStock(item_list);
+    if (!stockResult.success) {
+      return res.status(400).json({ msg: stockResult.message });
+    }
 
     const order = new Order({
       user: req.user.id,
-      customerName,
-      customerPhone,
-      customerAddress,
-      items,
-      totalAmount,
+      order_id,
+      buyer_email,
+      buyer_message,
+      payment_info,
+      shipping_info,
+      item_list,
+      source: source || 'Manual',
       notes,
-      source: source || 'Manual'
+      create_time: Date.now(),
+      update_time: Date.now()
     });
 
     await order.save();
@@ -47,10 +56,10 @@ router.post('/', authenticateToken, async (req, res) => {
 // PUT update status order
 router.put('/:id/status', authenticateToken, async (req, res) => {
   try {
-    const { status } = req.body;
+    const { order_status } = req.body;
     const order = await Order.findOneAndUpdate(
       { _id: req.params.id, user: req.user.id },
-      { status },
+      { order_status, update_time: Date.now() },
       { new: true }
     );
     if (!order) return res.status(404).json({ msg: 'Order tidak ditemukan' });
@@ -60,13 +69,13 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE order (hanya jika Pending)
+// DELETE order (hanya jika AWAITING_SHIPMENT atau UNPAID)
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const order = await Order.findOne({ _id: req.params.id, user: req.user.id });
     if (!order) return res.status(404).json({ msg: 'Order tidak ditemukan' });
-    if (order.status !== 'Pending') {
-      return res.status(400).json({ msg: 'Hanya order Pending yang bisa dihapus' });
+    if (order.order_status !== 'AWAITING_SHIPMENT' && order.order_status !== 'UNPAID') {
+      return res.status(400).json({ msg: 'Hanya order yang belum diproses yang bisa dihapus' });
     }
     await order.deleteOne();
     res.json({ msg: 'Order berhasil dihapus' });
