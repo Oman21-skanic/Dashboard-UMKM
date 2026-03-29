@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import {
   Bell,
   Eye,
@@ -31,135 +32,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/component/ui/card";
 import { Input } from "@/component/ui/input";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/component/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
-
-const statCards = [
-  {
-    label: "Total Pendapatan",
-    value: "Rp18,4jt",
-    change: "+18.5%",
-    tone: "bg-[#e7f7ef] text-[#1f9d6a]",
-    iconBg: "bg-[#e8f1fb] text-[#3b6d9c]",
-    icon: Wallet,
-  },
-  {
-    label: "Total Pesanan",
-    value: "487",
-    change: "+24.1%",
-    tone: "bg-[#e7f7ef] text-[#1f9d6a]",
-    iconBg: "bg-[#e7f7ef] text-[#1f9d6a]",
-    icon: ShoppingCart,
-  },
-  {
-    label: "Rata-rata Order",
-    value: "Rp37,8rb",
-    change: "-3.2%",
-    tone: "bg-[#fde8e8] text-[#ef4444]",
-    iconBg: "bg-[#fff2e7] text-[#f97316]",
-    icon: Receipt,
-  },
-  {
-    label: "TikTok Views",
-    value: "284K",
-    change: "+67.3%",
-    tone: "bg-[#e7f7ef] text-[#1f9d6a]",
-    iconBg: "bg-[#ffe6ee] text-[#e11d48]",
-    icon: Eye,
-  },
-];
-
-const trendValues = [
-  6, 10, 9, 14, 18, 12, 20, 11, 16, 24, 13, 18, 22, 15, 26, 18, 20, 28,
-  14, 12, 18, 10, 16, 20, 15, 30, 18, 22, 19, 21,
-];
-
-const trendData = trendValues.map((value, index) => ({
-  day: index + 1,
-  value,
-}));
-
-const highlightedTrendDays = new Set([26]);
-
-const topProducts = [
-  {
-    name: "Sabun Aloe Vera",
-    value: "Rp1,8jt",
-    percent: 92,
-    tone: "bg-[#3b82f6]",
-  },
-  {
-    name: "Toner Vit C Serum",
-    value: "Rp1,2jt",
-    percent: 68,
-    tone: "bg-[#6366f1]",
-  },
-  {
-    name: "Eye Cream Retinol",
-    value: "Rp875rb",
-    percent: 52,
-    tone: "bg-[#22c55e]",
-  },
-  {
-    name: "Micellar Water",
-    value: "Rp520rb",
-    percent: 36,
-    tone: "bg-[#f97316]",
-  },
-  {
-    name: "Masker Lumpur",
-    value: "Rp310rb",
-    percent: 22,
-    tone: "bg-[#ef4444]",
-  },
-];
-
-const orderStatusData = [
-  { name: "Selesai", value: 51.1, color: "#3b82f6" },
-  { name: "Dikirim", value: 27.3, color: "#0f2a43" },
-  { name: "Diproses", value: 14.4, color: "#f97316" },
-  { name: "Pending", value: 5.8, color: "#facc15" },
-];
-
-const platformPerformance = [
-  {
-    name: "TikTok Shop",
-    value: "Rp8,2jt",
-    percent: 88,
-    color: "#38bdf8",
-    icon: TikTokIcon,
-  },
-  {
-    name: "Shopee",
-    value: "Rp5,7jt",
-    percent: 62,
-    color: "#f97316",
-    icon: ShoppingBag,
-  },
-  {
-    name: "Instagram",
-    value: "Rp2,9jt",
-    percent: 44,
-    color: "#ec4899",
-    icon: Instagram,
-  },
-  {
-    name: "Tokopedia",
-    value: "Rp1,6jt",
-    percent: 28,
-    color: "#22c55e",
-    icon: Store,
-  },
-];
+import { apiGet } from "@/api/apiClient";
 
 export default function Analitik() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const [orders, setOrders] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
 
-  const displayName = user?.businessName || user?.fullName || "Ujang Santosa";
+  const displayName = user?.businessName || user?.email || "Pengguna";
   const initials = displayName
     .split(" ")
     .filter(Boolean)
@@ -167,6 +55,154 @@ export default function Analitik() {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [ordersData, inventoryData] = await Promise.all([
+        apiGet("/api/orders"),
+        apiGet("/api/inventory"),
+      ]);
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      setInventory(Array.isArray(inventoryData) ? inventoryData : []);
+    } catch (err) {
+      console.error("Fetch analytics error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // ── Computed Stats ──
+  const totalPendapatan = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const totalPesanan = orders.length;
+  const rataRataOrder = totalPesanan > 0 ? Math.round(totalPendapatan / totalPesanan) : 0;
+  const totalProduk = inventory.length;
+
+  const formatRupiah = (val) => {
+    if (val >= 1_000_000) return `Rp${(val / 1_000_000).toFixed(1)}jt`;
+    if (val >= 1_000) return `Rp${(val / 1_000).toFixed(0)}rb`;
+    return `Rp${val.toLocaleString("id-ID")}`;
+  };
+
+  const statCards = [
+    {
+      label: "Total Pendapatan",
+      value: formatRupiah(totalPendapatan),
+      change: totalPesanan > 0 ? `${totalPesanan} order` : "—",
+      tone: "bg-[#e7f7ef] text-[#1f9d6a]",
+      iconBg: "bg-[#e8f1fb] text-[#3b6d9c]",
+      icon: Wallet,
+    },
+    {
+      label: "Total Pesanan",
+      value: totalPesanan.toLocaleString("id-ID"),
+      change: `${orders.filter((o) => o.status === "Delivered").length} selesai`,
+      tone: "bg-[#e7f7ef] text-[#1f9d6a]",
+      iconBg: "bg-[#e7f7ef] text-[#1f9d6a]",
+      icon: ShoppingCart,
+    },
+    {
+      label: "Rata-rata Order",
+      value: formatRupiah(rataRataOrder),
+      change: totalPesanan > 0 ? `dari ${totalPesanan} order` : "—",
+      tone: "bg-[#eaf3fc] text-[#1c4f7a]",
+      iconBg: "bg-[#fff2e7] text-[#f97316]",
+      icon: Receipt,
+    },
+    {
+      label: "Total Produk",
+      value: totalProduk.toLocaleString("id-ID"),
+      change: `${inventory.filter((i) => i.stock <= 10).length} stok menipis`,
+      tone: inventory.filter((i) => i.stock <= 10).length > 0
+        ? "bg-[#fff2e7] text-[#f97316]"
+        : "bg-[#e7f7ef] text-[#1f9d6a]",
+      iconBg: "bg-[#ffe6ee] text-[#e11d48]",
+      icon: Eye,
+    },
+  ];
+
+  // ── Trend Data ──
+  const trendData = (() => {
+    const now = new Date();
+    const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const data = Array.from({ length: days }, (_, i) => ({ day: i + 1, value: 0 }));
+    orders.forEach((o) => {
+      const d = new Date(o.createdAt);
+      if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+        data[d.getDate() - 1].value += o.totalAmount || 0;
+      }
+    });
+    return data.map((d) => ({ ...d, value: Math.round(d.value / 1000) }));
+  })();
+
+  const maxDay = trendData.reduce((m, d) => (d.value > m.value ? d : m), trendData[0]);
+  const highlightedDays = new Set(maxDay ? [maxDay.day] : []);
+
+  // ── Top Products ──
+  const topProducts = (() => {
+    const map = {};
+    orders.forEach((o) => {
+      (o.items || []).forEach((item) => {
+        const key = item.productName || "Unknown";
+        if (!map[key]) map[key] = { revenue: 0, count: 0 };
+        map[key].revenue += item.subtotal || 0;
+        map[key].count += item.quantity || 0;
+      });
+    });
+    const maxRevenue = Math.max(...Object.values(map).map((v) => v.revenue), 1);
+    const tones = ["bg-[#3b82f6]", "bg-[#6366f1]", "bg-[#22c55e]", "bg-[#f97316]", "bg-[#ef4444]"];
+    return Object.entries(map)
+      .sort(([, a], [, b]) => b.revenue - a.revenue)
+      .slice(0, 5)
+      .map(([name, data], i) => ({
+        name,
+        value: formatRupiah(data.revenue),
+        percent: Math.round((data.revenue / maxRevenue) * 100),
+        tone: tones[i] || tones[0],
+      }));
+  })();
+
+  // ── Order Status ──
+  const orderStatusData = (() => {
+    const counts = {
+      Delivered: orders.filter((o) => o.status === "Delivered").length,
+      Shipped: orders.filter((o) => o.status === "Shipped").length,
+      Processing: orders.filter((o) => o.status === "Processing").length,
+      Pending: orders.filter((o) => o.status === "Pending").length,
+    };
+    const total = Math.max(totalPesanan, 1);
+    return [
+      { name: "Selesai", value: parseFloat(((counts.Delivered / total) * 100).toFixed(1)), color: "#3b82f6", raw: counts.Delivered },
+      { name: "Dikirim", value: parseFloat(((counts.Shipped / total) * 100).toFixed(1)), color: "#0f2a43", raw: counts.Shipped },
+      { name: "Diproses", value: parseFloat(((counts.Processing / total) * 100).toFixed(1)), color: "#f97316", raw: counts.Processing },
+      { name: "Pending", value: parseFloat(((counts.Pending / total) * 100).toFixed(1)), color: "#facc15", raw: counts.Pending },
+    ].filter((s) => s.raw > 0);
+  })();
+
+  // ── Platform Performance ──
+  const platformPerformance = (() => {
+    const sources = { Manual: 0, TikTok: 0, Instagram: 0, Tokopedia: 0 };
+    orders.forEach((o) => {
+      const src = o.source || "Manual";
+      if (sources[src] !== undefined) sources[src] += o.totalAmount || 0;
+    });
+    const maxVal = Math.max(...Object.values(sources), 1);
+    const icons = { Manual: ShoppingBag, TikTok: TikTokIcon, Instagram: Instagram, Tokopedia: Store };
+    const colors = { Manual: "#3b82f6", TikTok: "#38bdf8", Instagram: "#ec4899", Tokopedia: "#22c55e" };
+    return Object.entries(sources)
+      .filter(([, v]) => v > 0)
+      .sort(([, a], [, b]) => b - a)
+      .map(([name, val]) => ({
+        name,
+        value: formatRupiah(val),
+        percent: Math.round((val / maxVal) * 100),
+        color: colors[name] || "#64748b",
+        icon: icons[name] || ShoppingBag,
+      }));
+  })();
 
   return (
     <div className="min-h-screen bg-[#fbf8f3] text-[#102e4a]">
@@ -263,237 +299,261 @@ export default function Analitik() {
           </header>
 
           <main className="space-y-6 px-5 py-6 md:px-8">
-            <section className="grid gap-4 lg:grid-cols-4">
-              {statCards.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Card
-                    key={item.label}
-                    className="border-[#eef2f7] shadow-[0_16px_40px_rgba(15,42,67,0.08)]"
-                  >
-                    <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-                      <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.iconBg}`}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-[0.7rem] font-semibold ${item.tone}`}
-                      >
-                        {item.change}
-                      </span>
-                    </CardHeader>
-                    <CardContent className="space-y-1">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9aa6b2]">
-                        {item.label}
-                      </p>
-                      <p className="text-2xl font-semibold text-[#14293d]">
-                        {item.value}
-                      </p>
-                      <p className="text-xs text-[#7c8ca0]">Bulan ini</p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </section>
-
-            <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-              <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
-                <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
-                  <div>
-                    <CardTitle className="text-lg font-semibold text-[#14293d]">
-                      Tren Pendapatan — 30 Hari
-                    </CardTitle>
-                    <p className="text-xs text-[#7c8ca0]">
-                      Rp18,4jt total bulan ini
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button className="rounded-lg bg-[#eaf3fc] px-3 py-1.5 text-xs font-semibold text-[#1c4f7a]">
-                      Bar
-                    </button>
-                    <button className="rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 text-xs font-semibold text-[#94a3b8]">
-                      Line
-                    </button>
-                  </div>
-                </CardHeader>
-                <CardContent className="h-56 pt-0 sm:h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={trendData}>
-                      <CartesianGrid
-                        stroke="rgba(15,42,67,0.08)"
-                        strokeDasharray="3 3"
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="day"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#94a3b8", fontSize: 11 }}
-                        interval={4}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#94a3b8", fontSize: 11 }}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: 12,
-                          border: "1px solid rgba(15,42,67,0.12)",
-                          backgroundColor: "#ffffff",
-                        }}
-                        labelStyle={{ color: "#0f2a43", fontWeight: 700 }}
-                      />
-                      <Bar dataKey="value" barSize={16} radius={[8, 8, 0, 0]}>
-                        {trendData.map((entry) => {
-                          const fill = highlightedTrendDays.has(entry.day)
-                            ? "#0f2a43"
-                            : entry.day % 3 === 0
-                              ? "#3bb0f3"
-                              : "#cfe9fb";
-                          return (
-                            <Cell key={`cell-${entry.day}`} fill={fill} />
-                          );
-                        })}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold text-[#14293d]">
-                    Produk Terlaris
-                  </CardTitle>
-                  <p className="text-xs text-[#7c8ca0]">
-                    Performa produk teratas bulan ini.
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {topProducts.map((product) => (
-                    <div key={product.name} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm font-semibold text-[#14293d]">
-                        <span>{product.name}</span>
-                        <span className="text-xs text-[#1f3a52]">
-                          {product.value}
-                        </span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-[#e2e8f0]">
-                        <div
-                          className={`h-2 rounded-full ${product.tone}`}
-                          style={{ width: `${product.percent}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </section>
-
-            <section className="grid gap-6 xl:grid-cols-2">
-              <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold text-[#14293d]">
-                    Status Pesanan
-                  </CardTitle>
-                  <p className="text-xs text-[#7c8ca0]">
-                    Total order bulan ini.
-                  </p>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center gap-4">
-                  <div className="relative h-36 w-36 sm:h-40 sm:w-40">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={orderStatusData}
-                          dataKey="value"
-                          innerRadius={52}
-                          outerRadius={70}
-                          stroke="none"
-                        >
-                          {orderStatusData.map((entry) => (
-                            <Cell key={entry.name} fill={entry.color} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <p className="text-2xl font-semibold text-[#14293d]">
-                        487
-                      </p>
-                      <p className="text-xs text-[#7c8ca0]">TOTAL ORDER</p>
-                    </div>
-                  </div>
-                  <div className="grid w-full gap-2 text-xs text-[#7c8ca0] sm:grid-cols-2">
-                    {orderStatusData.map((entry) => (
-                      <div
-                        key={entry.name}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <span className="flex items-center gap-2">
-                          <span
-                            className="h-2.5 w-2.5 rounded-full"
-                            style={{ backgroundColor: entry.color }}
-                          />
-                          {entry.name}
-                        </span>
-                        <span className="font-semibold text-[#14293d]">
-                          {entry.value}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold text-[#14293d]">
-                    Performa Platform
-                  </CardTitle>
-                  <p className="text-xs text-[#7c8ca0]">
-                    Pendapatan per platform penjualan
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {platformPerformance.map((platform) => {
-                    const Icon = platform.icon;
+            {loading ? (
+              <div className="flex justify-center py-16">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <>
+                {/* Stat Cards */}
+                <section className="grid gap-4 lg:grid-cols-4">
+                  {statCards.map((item) => {
+                    const Icon = item.icon;
                     return (
-                      <div
-                        key={platform.name}
-                        className="flex items-center gap-3"
+                      <Card
+                        key={item.label}
+                        className="border-[#eef2f7] shadow-[0_16px_40px_rgba(15,42,67,0.08)]"
                       >
-                        <div
-                          className="flex h-10 w-10 items-center justify-center rounded-xl text-white"
-                          style={{ backgroundColor: platform.color }}
-                        >
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center justify-between text-sm font-semibold text-[#14293d]">
-                            <span>{platform.name}</span>
-                            <span className="text-xs text-[#1f3a52]">
-                              {platform.value}
-                            </span>
+                        <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+                          <div
+                            className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.iconBg}`}
+                          >
+                            <Icon className="h-5 w-5" />
                           </div>
-                          <div className="h-2 w-full rounded-full bg-[#e2e8f0]">
-                            <div
-                              className="h-2 rounded-full"
-                              style={{
-                                width: `${platform.percent}%`,
-                                backgroundColor: platform.color,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[0.7rem] font-semibold ${item.tone}`}
+                          >
+                            {item.change}
+                          </span>
+                        </CardHeader>
+                        <CardContent className="space-y-1">
+                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9aa6b2]">
+                            {item.label}
+                          </p>
+                          <p className="text-2xl font-semibold text-[#14293d]">
+                            {item.value}
+                          </p>
+                          <p className="text-xs text-[#7c8ca0]">Bulan ini</p>
+                        </CardContent>
+                      </Card>
                     );
                   })}
-                </CardContent>
-              </Card>
-            </section>
+                </section>
+
+                {/* Revenue Trend + Top Products */}
+                <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
+                    <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
+                      <div>
+                        <CardTitle className="text-lg font-semibold text-[#14293d]">
+                          Tren Pendapatan — 30 Hari
+                        </CardTitle>
+                        <p className="text-xs text-[#7c8ca0]">
+                          {formatRupiah(totalPendapatan)} total bulan ini (dalam ribuan)
+                        </p>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="h-56 pt-0 sm:h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={trendData}>
+                          <CartesianGrid
+                            stroke="rgba(15,42,67,0.08)"
+                            strokeDasharray="3 3"
+                            vertical={false}
+                          />
+                          <XAxis
+                            dataKey="day"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: "#94a3b8", fontSize: 11 }}
+                            interval={4}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: "#94a3b8", fontSize: 11 }}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              borderRadius: 12,
+                              border: "1px solid rgba(15,42,67,0.12)",
+                              backgroundColor: "#ffffff",
+                            }}
+                            labelStyle={{ color: "#0f2a43", fontWeight: 700 }}
+                            formatter={(value) => [`Rp${value}rb`, "Pendapatan"]}
+                          />
+                          <Bar dataKey="value" barSize={16} radius={[8, 8, 0, 0]}>
+                            {trendData.map((entry) => {
+                              const fill = highlightedDays.has(entry.day)
+                                ? "#0f2a43"
+                                : entry.value > 0
+                                  ? "#3bb0f3"
+                                  : "#cfe9fb";
+                              return (
+                                <Cell key={`cell-${entry.day}`} fill={fill} />
+                              );
+                            })}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
+                    <CardHeader>
+                      <CardTitle className="text-base font-semibold text-[#14293d]">
+                        Produk Terlaris
+                      </CardTitle>
+                      <p className="text-xs text-[#7c8ca0]">
+                        Berdasarkan pendapatan bulan ini.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {topProducts.length === 0 ? (
+                        <div className="text-center py-4 text-gray-400 text-sm">
+                          Belum ada data produk
+                        </div>
+                      ) : (
+                        topProducts.map((product) => (
+                          <div key={product.name} className="space-y-2">
+                            <div className="flex items-center justify-between text-sm font-semibold text-[#14293d]">
+                              <span>{product.name}</span>
+                              <span className="text-xs text-[#1f3a52]">
+                                {product.value}
+                              </span>
+                            </div>
+                            <div className="h-2 w-full rounded-full bg-[#e2e8f0]">
+                              <div
+                                className={`h-2 rounded-full ${product.tone}`}
+                                style={{ width: `${product.percent}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </CardContent>
+                  </Card>
+                </section>
+
+                {/* Order Status + Platform Performance */}
+                <section className="grid gap-6 xl:grid-cols-2">
+                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
+                    <CardHeader>
+                      <CardTitle className="text-base font-semibold text-[#14293d]">
+                        Status Pesanan
+                      </CardTitle>
+                      <p className="text-xs text-[#7c8ca0]">
+                        Total order bulan ini.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center gap-4">
+                      {orderStatusData.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400 text-sm">
+                          Belum ada data pesanan
+                        </div>
+                      ) : (
+                        <>
+                          <div className="relative h-36 w-36 sm:h-40 sm:w-40">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={orderStatusData}
+                                  dataKey="value"
+                                  innerRadius={52}
+                                  outerRadius={70}
+                                  stroke="none"
+                                >
+                                  {orderStatusData.map((entry) => (
+                                    <Cell key={entry.name} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <p className="text-2xl font-semibold text-[#14293d]">
+                                {totalPesanan}
+                              </p>
+                              <p className="text-xs text-[#7c8ca0]">TOTAL ORDER</p>
+                            </div>
+                          </div>
+                          <div className="grid w-full gap-2 text-xs text-[#7c8ca0] sm:grid-cols-2">
+                            {orderStatusData.map((entry) => (
+                              <div
+                                key={entry.name}
+                                className="flex items-center justify-between gap-2"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <span
+                                    className="h-2.5 w-2.5 rounded-full"
+                                    style={{ backgroundColor: entry.color }}
+                                  />
+                                  {entry.name}
+                                </span>
+                                <span className="font-semibold text-[#14293d]">
+                                  {entry.value}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
+                    <CardHeader>
+                      <CardTitle className="text-base font-semibold text-[#14293d]">
+                        Performa Sumber Order
+                      </CardTitle>
+                      <p className="text-xs text-[#7c8ca0]">
+                        Pendapatan per sumber pesanan
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {platformPerformance.length === 0 ? (
+                        <div className="text-center py-4 text-gray-400 text-sm">
+                          Belum ada data
+                        </div>
+                      ) : (
+                        platformPerformance.map((platform) => {
+                          const Icon = platform.icon;
+                          return (
+                            <div
+                              key={platform.name}
+                              className="flex items-center gap-3"
+                            >
+                              <div
+                                className="flex h-10 w-10 items-center justify-center rounded-xl text-white"
+                                style={{ backgroundColor: platform.color }}
+                              >
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center justify-between text-sm font-semibold text-[#14293d]">
+                                  <span>{platform.name}</span>
+                                  <span className="text-xs text-[#1f3a52]">
+                                    {platform.value}
+                                  </span>
+                                </div>
+                                <div className="h-2 w-full rounded-full bg-[#e2e8f0]">
+                                  <div
+                                    className="h-2 rounded-full"
+                                    style={{
+                                      width: `${platform.percent}%`,
+                                      backgroundColor: platform.color,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </CardContent>
+                  </Card>
+                </section>
+              </>
+            )}
           </main>
         </div>
       </div>

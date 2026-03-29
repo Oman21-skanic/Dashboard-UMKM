@@ -6,7 +6,7 @@ const authenticateToken = require('../middleware/authenticateToken');
 // GET all inventory items for the user
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const items = await Inventory.find({ user: req.user.user.id }).sort({ createdAt: -1 });
+    const items = await Inventory.find({ user: req.user.id }).sort({ createdAt: -1 });
     res.json(items);
   } catch (err) {
     res.status(500).json({ msg: 'Server error' });
@@ -23,7 +23,7 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     const item = new Inventory({
-      user: req.user.user.id,
+      user: req.user.id,
       name,
       sku,
       category,
@@ -46,7 +46,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { name, sku, category, price, stock, imageUrl, description } = req.body;
     
-    let item = await Inventory.findOne({ _id: req.params.id, user: req.user.user.id });
+    let item = await Inventory.findOne({ _id: req.params.id, user: req.user.id });
     if (!item) return res.status(404).json({ msg: 'Produk tidak ditemukan' });
 
     item.name = name || item.name;
@@ -67,7 +67,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // DELETE an inventory item
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    const item = await Inventory.findOne({ _id: req.params.id, user: req.user.user.id });
+    const item = await Inventory.findOne({ _id: req.params.id, user: req.user.id });
     if (!item) return res.status(404).json({ msg: 'Produk tidak ditemukan' });
     
     await item.deleteOne();

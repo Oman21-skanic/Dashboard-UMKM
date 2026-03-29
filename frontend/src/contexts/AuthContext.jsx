@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 const AuthContext = createContext(null);
 
@@ -15,13 +15,53 @@ export function AuthProvider({ children }) {
   });
   const [loading, setLoading] = useState(false);
 
-  const register = async (fullName, businessName, email, whatsapp, password) => {
+  // Fetch full profile from backend and update local state
+  const fetchProfile = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+
+    try {
+      const res = await fetch(`${API_URL}/api/auth/profile`, {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          setUser(null);
+        }
+        return null;
+      }
+      const profile = await res.json();
+      const userInfo = {
+        id: profile._id,
+        email: profile.email,
+        businessName: profile.businessName || "",
+        channels: profile.channels || [],
+      };
+      localStorage.setItem("user", JSON.stringify(userInfo));
+      setUser(userInfo);
+      return userInfo;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // On mount, if we have a token, fetch latest profile
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchProfile();
+    }
+  }, [fetchProfile]);
+
+  const register = useCallback(async (fullName, businessName, email, whatsapp, password) => {
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, businessName, email, whatsapp, password }),
+        body: JSON.stringify({ email, password, businessName, channels: [] }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.msg || "Registrasi gagal");
@@ -29,10 +69,9 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Support identifier = email atau whatsapp
-  const login = async (identifier, password) => {
+  const login = useCallback(async (identifier, password) => {
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
@@ -47,24 +86,32 @@ export function AuthProvider({ children }) {
       }
 
       const data = await res.json();
-
       localStorage.setItem("token", data.token);
-      const userInfo = { email: identifier, token: data.token };
-      localStorage.setItem("user", JSON.stringify(userInfo));
-      setUser(userInfo);
+
+      // Fetch full profile after login
+      const profile = await fetchProfile();
+      if (!profile) {
+        const userInfo = { email: identifier, token: data.token };
+        localStorage.setItem("user", JSON.stringify(userInfo));
+        setUser(userInfo);
+      }
+
       return data;
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchProfile]);
 
-  const logout = () => {
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`${API_URL}/api/auth/logout`, { method: "POST" });
+    } catch { /* ignore */ }
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
-  };
+  }, []);
 
-  const getToken = () => localStorage.getItem("token");
+  const getToken = useCallback(() => localStorage.getItem("token"), []);
 
   const value = useMemo(() => ({
     user,
@@ -74,7 +121,8 @@ export function AuthProvider({ children }) {
     register,
     logout,
     getToken,
-  }), [user, loading]);
+    fetchProfile,
+  }), [user, loading, login, register, logout, getToken, fetchProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -6,7 +6,7 @@ const authenticateToken = require('../middleware/authenticateToken');
 // GET semua orders milik user
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user.user.id })
+    const orders = await Order.find({ user: req.user.id })
       .sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
@@ -26,7 +26,7 @@ router.post('/', authenticateToken, async (req, res) => {
     const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
 
     const order = new Order({
-      user: req.user.user.id,
+      user: req.user.id,
       customerName,
       customerPhone,
       customerAddress,
@@ -49,7 +49,7 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
   try {
     const { status } = req.body;
     const order = await Order.findOneAndUpdate(
-      { _id: req.params.id, user: req.user.user.id },
+      { _id: req.params.id, user: req.user.id },
       { status },
       { new: true }
     );
@@ -63,7 +63,7 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
 // DELETE order (hanya jika Pending)
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    const order = await Order.findOne({ _id: req.params.id, user: req.user.user.id });
+    const order = await Order.findOne({ _id: req.params.id, user: req.user.id });
     if (!order) return res.status(404).json({ msg: 'Order tidak ditemukan' });
     if (order.status !== 'Pending') {
       return res.status(400).json({ msg: 'Hanya order Pending yang bisa dihapus' });
