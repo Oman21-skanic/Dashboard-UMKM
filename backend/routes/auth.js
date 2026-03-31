@@ -20,7 +20,7 @@ router.post("/forgot-password", async (req, res) => {
 // FITUR REGISTER 
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, businessName, channels } = req.body;
+    const { email, password, fullName, businessName, phoneNumber, channels } = req.body;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -40,7 +40,9 @@ router.post('/register', async (req, res) => {
     user = new User({
       email,
       password: hashedPassword,
+      fullName,
       businessName,
+      phoneNumber,
       channels
     });
 
@@ -113,6 +115,57 @@ router.get('/profile', authenticateToken, async (req, res) => {
     if (!user) return res.status(404).json({ msg: 'User tidak ditemukan' });
     res.json(user);
   } catch (err) {
+    res.status(500).send('Server Error');
+  }
+});
+
+// FITUR UPDATE PROFIL USER
+router.put('/profile', authenticateToken, async (req, res) => {
+  try {
+    const { fullName, businessName, phoneNumber } = req.body;
+    
+    let user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User tidak ditemukan' });
+
+    if (fullName !== undefined) user.fullName = fullName;
+    if (businessName !== undefined) user.businessName = businessName;
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+
+    await user.save();
+    
+    // Kembalikan data user tanpa password
+    const updatedUser = await User.findById(req.user.id).select('-password');
+    res.json({ msg: 'Profil berhasil diperbarui', user: updatedUser });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// FITUR UBAH KATA SANDI
+router.put('/password', authenticateToken, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ msg: 'Password baru harus minimal 8 karakter' });
+    }
+
+    let user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User tidak ditemukan' });
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) return res.status(400).json({ msg: 'Password lama salah' });
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ msg: 'Password berhasil diperbarui' });
+  } catch (err) {
+    console.error(err.message);
     res.status(500).send('Server Error');
   }
 });

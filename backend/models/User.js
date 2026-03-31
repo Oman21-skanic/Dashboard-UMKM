@@ -11,7 +11,9 @@ const ChannelSchema = new mongoose.Schema({
 const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  fullName: { type: String },
   businessName: { type: String },
+  phoneNumber: { type: String },
   channels: [ChannelSchema]
 }, { timestamps: true });
 

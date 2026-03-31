@@ -25,7 +25,9 @@ export function AuthProvider({ children }) {
       const info = {
         id: data._id,
         email: data.email,
+        fullName: data.fullName || "",
         businessName: data.businessName || "",
+        phoneNumber: data.phoneNumber || "",
         channels: data.channels || [],
       };
       localStorage.setItem("user", JSON.stringify(info));
@@ -49,7 +51,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const { data } = await axios.post(`${API_URL}/api/auth/register`, {
-        email, password, businessName, channels: [],
+        email, password, fullName, businessName, phoneNumber: whatsapp, channels: [],
       });
       return data;
     } catch (err) {
@@ -89,10 +91,50 @@ export function AuthProvider({ children }) {
 
   const getToken = useCallback(() => localStorage.getItem("token"), []);
 
+  const updateProfile = useCallback(async (profileData) => {
+    setLoading(true);
+    const token = getToken();
+    try {
+      const { data } = await axios.put(`${API_URL}/api/auth/profile`, profileData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const info = {
+        id: data.user._id,
+        email: data.user.email,
+        fullName: data.user.fullName || "",
+        businessName: data.user.businessName || "",
+        phoneNumber: data.user.phoneNumber || "",
+        channels: data.user.channels || [],
+      };
+      localStorage.setItem("user", JSON.stringify(info));
+      setUser(info);
+      return data;
+    } catch (err) {
+      throw new Error(err.response?.data?.msg || "Gagal memperbarui profil");
+    } finally {
+      setLoading(false);
+    }
+  }, [getToken]);
+
+  const updatePassword = useCallback(async (oldPassword, newPassword) => {
+    setLoading(true);
+    const token = getToken();
+    try {
+      const { data } = await axios.put(`${API_URL}/api/auth/password`, { oldPassword, newPassword }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return data;
+    } catch (err) {
+      throw new Error(err.response?.data?.msg || "Gagal memperbarui password");
+    } finally {
+      setLoading(false);
+    }
+  }, [getToken]);
+
   const value = useMemo(() => ({
     user, isAuthenticated: Boolean(user), loading,
-    login, register, logout, getToken, fetchProfile,
-  }), [user, loading, login, register, logout, getToken, fetchProfile]);
+    login, register, logout, getToken, fetchProfile, updateProfile, updatePassword
+  }), [user, loading, login, register, logout, getToken, fetchProfile, updateProfile, updatePassword]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
