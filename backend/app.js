@@ -12,19 +12,21 @@ const app = express();
 // 1. SECURITY HEADERS (Helmet)
 app.use(helmet());
 
-// 2. RATE LIMITING (Global)
+// 2. CORS CONFIG (Must be before Rate Limiting so 429 returns CORS headers)
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+  exposedHeaders: ['X-Saved-Products', 'Content-Disposition']
+}));
+
+// 3. RATE LIMITING (Global)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 menit
-  max: 100, // Limit 100 request per IP per 15 menit
+  max: 500, // Diperbesar dari 100 ke 500 untuk kenyamanan tahap development
   message: { msg: 'Terlalu banyak permintaan dari IP ini, silakan coba lagi nanti.' }
 });
 app.use('/api/', limiter);
 
-// 3. CORS CONFIG
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
-}));
 
 // 4. BODY PARSING & SANITIZATION
 const sanitize = require('mongo-sanitize');
@@ -54,5 +56,6 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/auth/tiktok', require('./routes/tiktokAuth'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/inventory', require('./routes/inventory'));
+app.use('/api/tiktok-template', require('./routes/tiktokTemplate'));
 
 module.exports = app;

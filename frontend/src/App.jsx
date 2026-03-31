@@ -8,6 +8,7 @@ import AnalitikPage from "./pages/Analitik.jsx";
 import SetelanPage from "./pages/Setelan.jsx";
 import ChannelsPage from "./pages/Channels.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
+import TikTokExportPage from "./pages/TikTokExport.jsx";
 import ProtectedRoute from "./component/ProtectedRoute.jsx";
 
 export default function App() {
@@ -61,6 +62,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <PesananPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tiktok-export"
+        element={
+          <ProtectedRoute>
+            <TikTokExportPage />
           </ProtectedRoute>
         }
       />

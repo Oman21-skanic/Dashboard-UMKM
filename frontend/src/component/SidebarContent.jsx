@@ -1,6 +1,7 @@
 import {
   Archive,
   ClipboardList,
+  FileSpreadsheet,
   Home,
   LineChart,
   Package,
@@ -21,6 +22,10 @@ const mainNav = [
 const platformNav = [
   { label: "TikTok Shop", icon: TikTokIcon, status: "online" },
   { label: "Shopee", icon: Store, status: "online" },
+];
+
+const toolsNav = [
+  { label: "TikTok Export/Import", icon: FileSpreadsheet, to: "/tiktok-export" },
 ];
 
 const miscNav = [{ label: "Setelan", icon: Settings, to: "/setelan" }];
@@ -122,6 +127,21 @@ export default function SidebarContent({
               content
             );
           })}
+        </nav>
+      </div>
+
+      <div className="mt-6">
+        <p className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+          Alat
+        </p>
+        <nav className="mt-4 space-y-1">
+          {toolsNav.map((item) => (
+            <SidebarNavItem
+              key={item.label}
+              item={item}
+              CloseWrapper={CloseWrapper}
+            />
+          ))}
         </nav>
       </div>
 

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertCircle, AlertTriangle, Bell, Boxes, ChevronLeft, ChevronRight,
-  Edit, Menu, MoreVertical, Plus, Search, SlidersHorizontal, Tags, Trash2, X,
+  Edit, FileSpreadsheet, Menu, MoreVertical, Plus, Search, SlidersHorizontal, Tags, Trash2, X, Download
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import SidebarContent from "@/component/SidebarContent";
 import { Button } from "@/component/ui/button";
@@ -31,6 +32,7 @@ export default function Inventori() {
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [actionMenuId, setActionMenuId] = useState(null);
 
@@ -105,12 +107,17 @@ export default function Inventori() {
               <div className="hidden items-center gap-3 md:flex">
                 <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" /><Input placeholder="Cari SKU, nama produk..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="h-10 w-72 rounded-xl border border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3]" /></div>
                 <button className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]"><Bell className="h-4 w-4" /><span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-[#ef4444]" /></button>
+                <Button onClick={() => setShowExportModal(true)} variant="outline" className="h-10 rounded-xl border-[#e2e8f0] bg-white px-4 text-sm font-semibold text-[#64748b]"><Download className="mr-2 h-4 w-4" /> Export Data</Button>
+                <Button onClick={() => navigate("/tiktok-export")} variant="outline" className="h-10 rounded-xl border-[#e2e8f0] px-4 text-sm font-semibold text-[#3182ce] hover:bg-[#eff6ff]"><FileSpreadsheet className="mr-2 h-4 w-4" />TikTok Export</Button>
                 <Button onClick={() => setShowCreateModal(true)} className="h-10 rounded-xl bg-[#4e7da9] px-4 text-sm font-semibold text-white hover:bg-[#3b6d9c]"><Plus className="mr-2 h-4 w-4" />Tambah Produk</Button>
               </div>
             </div>
             <div className="mt-4 space-y-3 md:hidden">
               <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" /><Input placeholder="Cari..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="h-9 w-full rounded-xl border border-[#e2e8f0] bg-white pl-9 text-sm" /></div>
-              <Button onClick={() => setShowCreateModal(true)} className="h-9 w-full rounded-xl bg-[#4e7da9] text-xs font-semibold text-white hover:bg-[#3b6d9c]"><Plus className="mr-2 h-4 w-4" />Tambah Produk</Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setShowExportModal(true)} variant="outline" className="h-9 w-full rounded-xl bg-white border-[#e2e8f0] text-[#64748b] text-xs font-semibold px-2"><Download className="mr-1 h-3 w-3" />Export</Button>
+                <Button onClick={() => setShowCreateModal(true)} className="h-9 w-full rounded-xl bg-[#4e7da9] text-xs font-semibold text-white hover:bg-[#3b6d9c]"><Plus className="mr-2 h-4 w-4" />Tambah Produk</Button>
+              </div>
             </div>
           </header>
 
@@ -237,6 +244,7 @@ export default function Inventori() {
         </div>
       </div>
 
+      {showExportModal && <ExportInventoryModal categories={categories} inventory={products} onClose={() => setShowExportModal(false)} />}
       {showCreateModal && <ProductFormModal title="Tambah Produk Baru" onClose={() => setShowCreateModal(false)} onSuccess={() => { fetchProducts(); setShowCreateModal(false); setMessage({ type: "success", text: "✅ Produk berhasil ditambahkan!" }); }} />}
       {editingProduct && <ProductFormModal title="Edit Produk" product={editingProduct} onClose={() => setEditingProduct(null)} onSuccess={() => { fetchProducts(); setEditingProduct(null); setMessage({ type: "success", text: "✅ Produk berhasil diperbarui!" }); }} />}
     </div>
@@ -253,7 +261,7 @@ function ActionMenu({ onEdit, onDelete, onClose }) {
   </>);
 }
 
-// Form sends TikTok-style payload: { product_name, category_id, description, skus: [{sku_id, stock_info, price_info}] }
+// Form sends TikTok-style payload
 function ProductFormModal({ title, product, onClose, onSuccess }) {
   const isEdit = Boolean(product);
   const firstSku = product?.skus?.[0] || {};
@@ -264,10 +272,22 @@ function ProductFormModal({ title, product, onClose, onSuccess }) {
     category_id: product?.category_id || "",
     description: product?.description || "",
     imageUrl: product?.imageUrl || "",
+    brand: product?.brand || "",
     sku_id: firstSku.sku_id || "",
     price: firstSku.price_info?.original_price || 0,
     stock: firstSku.stock_info?.available_stock || 0,
+    variant_name_1: product?.variant_name_1 || "",
+    variant_name_2: product?.variant_name_2 || "",
+    variant_value_1: firstSku.variant_value_1 || "",
+    variant_value_2: firstSku.variant_value_2 || "",
+    parcel_weight: product?.parcel_weight || "",
+    parcel_length: product?.parcel_length || "",
+    parcel_width: product?.parcel_width || "",
+    parcel_height: product?.parcel_height || "",
+    minimum_order_quantity: product?.minimum_order_quantity || "",
+    size_chart: product?.size_chart || "",
   });
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -282,10 +302,21 @@ function ProductFormModal({ title, product, onClose, onSuccess }) {
       category_id: form.category_id || undefined,
       description: form.description,
       imageUrl: form.imageUrl || undefined,
+      brand: form.brand || undefined,
+      variant_name_1: form.variant_name_1 || undefined,
+      variant_name_2: form.variant_name_2 || undefined,
+      parcel_weight: form.parcel_weight ? Number(form.parcel_weight) : undefined,
+      parcel_length: form.parcel_length ? Number(form.parcel_length) : undefined,
+      parcel_width: form.parcel_width ? Number(form.parcel_width) : undefined,
+      parcel_height: form.parcel_height ? Number(form.parcel_height) : undefined,
+      minimum_order_quantity: form.minimum_order_quantity ? Number(form.minimum_order_quantity) : undefined,
+      size_chart: form.size_chart || undefined,
       skus: [{
         sku_id: form.sku_id,
         stock_info: { available_stock: Number(form.stock) },
         price_info: { original_price: Number(form.price) },
+        variant_value_1: form.variant_value_1 || "",
+        variant_value_2: form.variant_value_2 || "",
       }],
     };
 
@@ -298,30 +329,215 @@ function ProductFormModal({ title, product, onClose, onSuccess }) {
     finally { setSaving(false); }
   };
 
+  const inputClass = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-[#3182ce] focus:ring-1 focus:ring-[#3182ce] outline-none transition-all";
+  const labelClass = "text-xs font-semibold text-[#64748b] mb-1 block";
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-800">{title}</h2>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
           </div>
           {error && <div className="mb-4 px-4 py-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
-          <div className="space-y-3">
-            <div><label className="text-xs font-semibold text-[#64748b] mb-1 block">Nama Produk *</label><input placeholder="Kemeja Pria" value={form.product_name} onChange={e => setForm({ ...form, product_name: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs font-semibold text-[#64748b] mb-1 block">SKU ID *</label><input placeholder="SKU-KEM-M" value={form.sku_id} onChange={e => setForm({ ...form, sku_id: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs font-semibold text-[#64748b] mb-1 block">Kategori</label><input placeholder="Pakaian" value={form.category_id} onChange={e => setForm({ ...form, category_id: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
+
+          <div className="space-y-4">
+            {/* === Informasi Dasar === */}
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider">Informasi Dasar</p>
+              <div><label className={labelClass}>Nama Produk *</label><input placeholder="Kemeja Pria Premium" value={form.product_name} onChange={e => setForm({ ...form, product_name: e.target.value })} className={inputClass} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className={labelClass}>SKU ID *</label><input placeholder="SKU-KEM-M" value={form.sku_id} onChange={e => setForm({ ...form, sku_id: e.target.value })} className={inputClass} /></div>
+                <div><label className={labelClass}>Kategori</label><input placeholder="Pakaian/Kemeja" value={form.category_id} onChange={e => setForm({ ...form, category_id: e.target.value })} className={inputClass} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className={labelClass}>Harga (Rp) *</label><input type="number" min={0} value={form.price} onChange={e => setForm({ ...form, price: Number(e.target.value) })} className={inputClass} /></div>
+                <div><label className={labelClass}>Stok *</label><input type="number" min={0} value={form.stock} onChange={e => setForm({ ...form, stock: Number(e.target.value) })} className={inputClass} /></div>
+              </div>
+              <div><label className={labelClass}>Merek</label><input placeholder="Nama brand (opsional)" value={form.brand} onChange={e => setForm({ ...form, brand: e.target.value })} className={inputClass} /></div>
+              <div><label className={labelClass}>Deskripsi</label><textarea placeholder="Kemeja katun premium, bahan adem..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className={inputClass} rows={2} /></div>
+              <div><label className={labelClass}>URL Gambar Utama</label><input placeholder="https://..." value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} className={inputClass} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs font-semibold text-[#64748b] mb-1 block">Harga *</label><input type="number" min={0} value={form.price} onChange={e => setForm({ ...form, price: Number(e.target.value) })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs font-semibold text-[#64748b] mb-1 block">Stok *</label><input type="number" min={0} value={form.stock} onChange={e => setForm({ ...form, stock: Number(e.target.value) })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" /></div>
-            </div>
-            <div><label className="text-xs font-semibold text-[#64748b] mb-1 block">Deskripsi</label><textarea placeholder="Kemeja katun premium" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" rows={2} /></div>
+
+            {/* === Toggle Advanced === */}
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-[#f8fafc] rounded-xl text-sm font-semibold text-[#3182ce] hover:bg-[#eff6ff] transition-all"
+            >
+              <span>📦 Field TikTok Shop (Varian, Dimensi, dll)</span>
+              <span className={`transition-transform ${showAdvanced ? "rotate-180" : ""}`}>▼</span>
+            </button>
+
+            {showAdvanced && (
+              <div className="space-y-4 pl-1 border-l-2 border-[#3182ce]/20 ml-2">
+                {/* Varian */}
+                <div className="space-y-3 pl-3">
+                  <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider">Varian</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className={labelClass}>Nama Varian 1</label><input placeholder="Warna" value={form.variant_name_1} onChange={e => setForm({ ...form, variant_name_1: e.target.value })} className={inputClass} /></div>
+                    <div><label className={labelClass}>Nilai Varian 1</label><input placeholder="Hitam" value={form.variant_value_1} onChange={e => setForm({ ...form, variant_value_1: e.target.value })} className={inputClass} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className={labelClass}>Nama Varian 2</label><input placeholder="Ukuran" value={form.variant_name_2} onChange={e => setForm({ ...form, variant_name_2: e.target.value })} className={inputClass} /></div>
+                    <div><label className={labelClass}>Nilai Varian 2</label><input placeholder="XL" value={form.variant_value_2} onChange={e => setForm({ ...form, variant_value_2: e.target.value })} className={inputClass} /></div>
+                  </div>
+                </div>
+
+                {/* Dimensi Paket */}
+                <div className="space-y-3 pl-3">
+                  <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider">Dimensi Paket</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className={labelClass}>Berat (gram)</label><input type="number" min={0} placeholder="200" value={form.parcel_weight} onChange={e => setForm({ ...form, parcel_weight: e.target.value })} className={inputClass} /></div>
+                    <div><label className={labelClass}>Panjang (cm)</label><input type="number" min={0} placeholder="10" value={form.parcel_length} onChange={e => setForm({ ...form, parcel_length: e.target.value })} className={inputClass} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className={labelClass}>Lebar (cm)</label><input type="number" min={0} placeholder="15" value={form.parcel_width} onChange={e => setForm({ ...form, parcel_width: e.target.value })} className={inputClass} /></div>
+                    <div><label className={labelClass}>Tinggi (cm)</label><input type="number" min={0} placeholder="5" value={form.parcel_height} onChange={e => setForm({ ...form, parcel_height: e.target.value })} className={inputClass} /></div>
+                  </div>
+                </div>
+
+                {/* Opsional */}
+                <div className="space-y-3 pl-3">
+                  <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider">Opsional</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className={labelClass}>Min. Order</label><input type="number" min={1} placeholder="1" value={form.minimum_order_quantity} onChange={e => setForm({ ...form, minimum_order_quantity: e.target.value })} className={inputClass} /></div>
+                    <div><label className={labelClass}>URL Bagan Ukuran</label><input placeholder="https://..." value={form.size_chart} onChange={e => setForm({ ...form, size_chart: e.target.value })} className={inputClass} /></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+
           <div className="flex gap-3 mt-5">
-            <button onClick={onClose} className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-xl text-sm hover:bg-gray-50">Batal</button>
-            <button onClick={handleSubmit} disabled={saving} className="flex-1 bg-[#4e7da9] text-white py-2 rounded-xl text-sm hover:bg-[#3b6d9c] disabled:opacity-60">{saving ? "Menyimpan..." : isEdit ? "Perbarui" : "Simpan"}</button>
+            <button onClick={onClose} className="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl text-sm hover:bg-gray-50 transition-all">Batal</button>
+            <button onClick={handleSubmit} disabled={saving} className="flex-1 bg-[#4e7da9] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-[#3b6d9c] disabled:opacity-60 transition-all">{saving ? "Menyimpan..." : isEdit ? "Perbarui" : "Simpan"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Export Inventory Modal ──
+function ExportInventoryModal({ inventory, categories, onClose }) {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [category, setCategory] = useState("Semua");
+  const [loading, setLoading] = useState(false);
+
+  const handleExport = () => {
+    setLoading(true);
+    setTimeout(() => {
+      // 1. Filter Data
+      const filtered = inventory.filter(item => {
+        const itemDate = new Date(item.createdAt).setHours(0,0,0,0);
+        const sDate = startDate ? new Date(startDate).setHours(0,0,0,0) : null;
+        const eDate = endDate ? new Date(endDate).setHours(23,59,59,999) : null;
+
+        const matchStart = !sDate || itemDate >= sDate;
+        const matchEnd = !eDate || itemDate <= eDate;
+        const matchCategory = category === "Semua" || item.category_id === category;
+
+        return matchStart && matchEnd && matchCategory;
+      });
+
+      if (filtered.length === 0) {
+        alert("Tidak ada data inventori yang sesuai dengan filter.");
+        setLoading(false);
+        return;
+      }
+
+      // 2. Map ke Array JSON yang di-flatten berdasarkan SKU
+      const dataForExcel = [];
+      filtered.forEach(p => {
+        // Jika produk tidak punya SKU, buat baris kosong untuk representasi
+        if (!p.skus || p.skus.length === 0) {
+          dataForExcel.push({
+            "Nama Produk": p.product_name || p.name || "—",
+            "Kategori": p.category_id || "—",
+            "Brand": p.brand || "—",
+            "SKU ID": "—",
+            "Stok": 0,
+            "Harga": 0,
+            "Tanggal Dibuat": new Date(p.createdAt).toLocaleDateString("id-ID"),
+            "Deskripsi": p.description || "—"
+          });
+          return;
+        }
+
+        p.skus.forEach(sku => {
+          dataForExcel.push({
+            "Nama Produk": p.product_name || p.name || "—",
+            "Kategori": p.category_id || "—",
+            "Brand": p.brand || "—",
+            "SKU ID": sku.sku_id || "—",
+            "Stok": sku.stock_info?.available_stock || 0,
+            "Harga": sku.price_info?.original_price || 0,
+            "Tanggal Dibuat": new Date(p.createdAt).toLocaleDateString("id-ID"),
+            "Deskripsi": p.description || "—"
+          });
+        });
+      });
+
+      // 3. Konversi dan Download
+      const ws = XLSX.utils.json_to_sheet(dataForExcel);
+      
+      const colWidths = [
+        { wch: 40 }, { wch: 20 }, { wch: 20 }, { wch: 20 },
+        { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 50 }
+      ];
+      ws['!cols'] = colWidths;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Inventori");
+
+      const fileName = `Export_Inventori_${new Date().getTime()}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      setLoading(false);
+      onClose();
+    }, 500);
+  };
+
+  const inputClass = "w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-sm focus:border-[#3182ce] focus:ring-1 focus:ring-[#3182ce] outline-none transition-all";
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-bold text-[#1e293b]">Export Inventori</h2>
+            <button onClick={onClose} className="text-[#94a3b8] hover:text-[#1e293b] font-bold text-xl">✕</button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider mb-2">Tanggal Input Barang (Opsional)</p>
+              <div className="flex gap-2 items-center">
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputClass} />
+                <span className="text-[#94a3b8] font-bold">-</span>
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputClass} />
+              </div>
+              <p className="text-[10px] text-[#94a3b8] mt-1 italic">*kosongkan jika ingin export semua waktu.</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider mb-2">Kategori Produk</p>
+              <select value={category} onChange={e => setCategory(e.target.value)} className={inputClass}>
+                <option value="Semua">Semua Kategori</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button onClick={onClose} className="flex-1 border border-[#e2e8f0] text-[#1e293b] font-semibold py-2.5 rounded-xl text-sm hover:bg-[#f8fafc] transition-colors">Batal</button>
+            <button onClick={handleExport} disabled={loading}
+              className="flex-1 bg-green-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-green-700 focus:ring-4 focus:ring-green-100 disabled:opacity-60 transition-all shadow-md flex items-center justify-center gap-2">
+              {loading ? "Memproses..." : <><Download className="h-4 w-4"/> Ekspor Excel</>}
+            </button>
           </div>
         </div>
       </div>

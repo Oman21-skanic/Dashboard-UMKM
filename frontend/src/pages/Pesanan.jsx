@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
+import { Menu, Plus, Search, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/apiClient";
+import SidebarContent from "@/component/SidebarContent";
+import { Button } from "@/component/ui/button";
+import { Input } from "@/component/ui/input";
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/component/ui/sheet";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent } from "@/component/ui/card";
 
 // Backend order_status enum
 const STATUS_OPTIONS = [
@@ -33,16 +41,21 @@ const STATUS_LABEL = {
 };
 
 const SOURCE_COLORS = {
-  Manual: "bg-gray-100 text-gray-700",
+  Manual: "bg-[#f1f5f9] text-[#64748b]",
   TikTok: "bg-black text-white",
-  Instagram: "bg-pink-100 text-pink-700",
-  Tokopedia: "bg-green-100 text-green-700",
+  Instagram: "bg-pink-50 text-pink-600",
+  Tokopedia: "bg-emerald-50 text-emerald-600",
 };
 
 const ITEMS_PER_PAGE = 10;
 
 export default function Pesanan() {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const handleLogout = () => { logout(); navigate("/login", { replace: true }); };
+  const displayName = user?.businessName || user?.email || "Pengguna";
+  const initials = displayName.split(" ").filter(Boolean).slice(0, 2).map(p => p[0]).join("").toUpperCase();
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +66,7 @@ export default function Pesanan() {
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [message, setMessage] = useState(null);
 
   const fetchOrders = useCallback(async () => {
@@ -61,6 +75,7 @@ export default function Pesanan() {
       setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setMessage({ type: "error", text: "❌ Gagal memuat data pesanan." });
     } finally {
       setLoading(false);
     }
@@ -72,7 +87,7 @@ export default function Pesanan() {
   const filtered = orders
     .filter(o => !filterStatus || o.order_status === filterStatus)
     .filter(o => !filterSource || o.source === filterSource)
-    .filter(o => !search || (o.shipping_info?.buyer_name || o.customerName || "").toLowerCase().includes(search.toLowerCase()))
+    .filter(o => !search || (o.shipping_info?.buyer_name || o.customerName || o.order_id || "").toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => sortDesc
       ? new Date(b.createdAt) - new Date(a.createdAt)
       : new Date(a.createdAt) - new Date(b.createdAt)
@@ -107,123 +122,161 @@ export default function Pesanan() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Daftar Pesanan</h1>
-            <p className="text-gray-500 text-sm">Kelola semua pesanan kamu di sini</p>
-          </div>
-          <div className="flex gap-3">
-            <button onClick={() => navigate("/dashboard")} className="text-sm text-gray-500 hover:text-gray-700">
-              ← Dashboard
-            </button>
-            <button onClick={() => setShowCreateModal(true)} className="bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-700">
-              + Buat Pesanan
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#fffcf5] text-[#102e4a]">
+      <div className="flex min-h-screen">
+        <aside className="hidden w-72 flex-col bg-[#102e4a] text-white md:flex">
+          <SidebarContent displayName={displayName} initials={initials} onLogout={handleLogout} />
+        </aside>
 
-        {message && (
-          <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${
-            message.type === "success" ? "bg-green-100 text-green-700 border border-green-300" : "bg-red-100 text-red-700 border border-red-300"
-          }`}>
-            {message.text}
-            <button onClick={() => setMessage(null)} className="ml-3 font-bold">✕</button>
-          </div>
-        )}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="border-b border-[#f1f5f9] bg-[#fffcf5]/80 px-5 py-4 backdrop-blur md:px-8">
+            <div className="flex items-center justify-between gap-4">
+              <div className="hidden flex-col gap-1 md:flex">
+                <div className="text-xs font-semibold text-[#64748b]">DashUMKM / <span className="text-[#3182ce]">Pesanan</span></div>
+                <h1 className="text-2xl font-semibold text-[#0f172a]">Daftar Pesanan</h1>
+              </div>
+              
+              <div className="flex items-center gap-3 md:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <button className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]">
+                      <Menu className="h-4 w-4" />
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-72 border-r-0 bg-[#102e4a] p-0 text-white">
+                    <SidebarContent displayName={displayName} initials={initials} onLogout={handleLogout} CloseWrapper={SheetClose} />
+                  </SheetContent>
+                </Sheet>
+                <div>
+                  <p className="text-[0.65rem] font-semibold text-[#94a3b8]">DashUMKM</p>
+                  <h1 className="text-sm font-semibold text-[#0f172a]">Pesanan</h1>
+                </div>
+              </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex flex-wrap gap-3">
-          <input type="text" placeholder="Cari nama pembeli..."
-            value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 min-w-[200px]" />
-          <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-            <option value="">Semua Status</option>
-            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABEL[s] || s}</option>)}
-          </select>
-          <select value={filterSource} onChange={e => { setFilterSource(e.target.value); setPage(1); }}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-            <option value="">Semua Source</option>
-            <option value="Manual">Manual</option>
-            <option value="TikTok">TikTok</option>
-            <option value="Instagram">Instagram</option>
-            <option value="Tokopedia">Tokopedia</option>
-          </select>
-          <button onClick={() => setSortDesc(prev => !prev)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm hover:bg-gray-50">
-            Tanggal {sortDesc ? "↓" : "↑"}
-          </button>
-        </div>
-
-        {/* Table */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : paginated.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-              <p className="text-4xl mb-3">📦</p>
-              <p>Belum ada pesanan</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Order ID</th>
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Pembeli</th>
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Total</th>
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Status</th>
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Source</th>
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Tanggal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginated.map(order => (
-                    <tr key={order._id} onClick={() => setSelectedOrder(order)}
-                      className="border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                        {order.order_id || `#${order._id.slice(-6).toUpperCase()}`}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-800">
-                        {order.shipping_info?.buyer_name || order.customerName || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">
-                        Rp {(order.payment_info?.total_amount || order.totalAmount || 0).toLocaleString("id-ID")}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.order_status] || "bg-gray-100 text-gray-600"}`}>
-                          {STATUS_LABEL[order.order_status] || order.order_status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${SOURCE_COLORS[order.source] || "bg-gray-100 text-gray-600"}`}>
-                          {order.source}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {new Date(order.createdAt).toLocaleDateString("id-ID")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-              <p className="text-sm text-gray-500">Halaman {page} dari {totalPages}</p>
-              <div className="flex gap-2">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50">← Prev</button>
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-lg disabled:opacity-50">Next →</button>
+              <div className="flex items-center gap-3">
+                <Button onClick={() => setShowExportModal(true)} variant="outline" className="h-10 rounded-xl px-4 text-sm font-semibold text-[#64748b] bg-white border-[#e2e8f0]">
+                  <Download className="mr-2 h-4 w-4" /> Export Data
+                </Button>
+                <Button onClick={() => setShowCreateModal(true)} className="h-10 rounded-xl bg-[#4e7da9] px-4 text-sm font-semibold text-white hover:bg-[#3b6d9c]">
+                  <Plus className="mr-2 h-4 w-4" />Buat Pesanan
+                </Button>
               </div>
             </div>
-          )}
+          </header>
+
+          <main className="space-y-6 px-5 py-6 md:px-8">
+            {message && (
+              <div className={`px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between ${
+                message.type === "success" ? "bg-green-100 text-green-700 border border-green-300" : "bg-red-100 text-red-700 border border-red-300"
+              }`}>
+                {message.text}
+                <button onClick={() => setMessage(null)} className="font-bold ml-3">✕</button>
+              </div>
+            )}
+
+            {/* Filters */}
+            <Card className="border-[#f1f5f9] shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+              <CardContent className="p-4 flex flex-wrap gap-3 items-center">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
+                  <Input 
+                    placeholder="Cari Order ID atau nama pembeli..."
+                    value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+                    className="h-10 w-full rounded-xl border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3]" 
+                  />
+                </div>
+                <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+                  className="h-10 rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-sm text-[#0f172a] focus:ring-[#3bb0f3]">
+                  <option value="">Semua Status</option>
+                  {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABEL[s] || s}</option>)}
+                </select>
+                <select value={filterSource} onChange={e => { setFilterSource(e.target.value); setPage(1); }}
+                  className="h-10 rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-sm text-[#0f172a] focus:ring-[#3bb0f3]">
+                  <option value="">Semua Source</option>
+                  <option value="Manual">Manual</option>
+                  <option value="TikTok">TikTok</option>
+                  <option value="Instagram">Instagram</option>
+                  <option value="Tokopedia">Tokopedia</option>
+                </select>
+                <Button variant="outline" onClick={() => setSortDesc(prev => !prev)} className="h-10 rounded-xl border-[#e2e8f0] px-4 text-sm font-semibold text-[#64748b]">
+                  Tanggal {sortDesc ? "↓" : "↑"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Table Area */}
+            <Card className="border-[#f1f5f9] shadow-[0_1px_2px_rgba(0,0,0,0.05)] overflow-hidden">
+              <CardContent className="p-0">
+                {loading ? (
+                  <div className="flex justify-center py-16">
+                    <div className="w-8 h-8 border-4 border-[#3bb0f3] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : paginated.length === 0 ? (
+                  <div className="text-center py-16 text-[#94a3b8]">
+                    <p className="text-4xl mb-3">📦</p>
+                    <p className="text-sm font-semibold">Belum ada pesanan{search ? " yang cocok" : ""}</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[880px] w-full text-left text-[12px]">
+                      <thead className="bg-[#f8fafc] text-[10px] font-bold uppercase tracking-[1px] text-[#94a3b8]">
+                        <tr>
+                          <th className="px-6 py-4">Order ID</th>
+                          <th className="px-6 py-4">Pembeli</th>
+                          <th className="px-6 py-4">Total</th>
+                          <th className="px-6 py-4">Status</th>
+                          <th className="px-6 py-4">Source</th>
+                          <th className="px-6 py-4">Tanggal</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#f1f5f9] text-[12px] font-medium text-[#1e293b]">
+                        {paginated.map(order => (
+                          <tr key={order._id} onClick={() => setSelectedOrder(order)}
+                            className="hover:bg-[#f8fafc] cursor-pointer transition-colors">
+                            <td className="px-6 py-5 font-mono font-semibold text-[#64748b] text-[13px]">
+                              {order.order_id || `#${order._id.slice(-6).toUpperCase()}`}
+                            </td>
+                            <td className="px-6 py-5">
+                              <p className="text-[14px] font-semibold text-[#1e293b]">
+                                {order.shipping_info?.buyer_name || order.customerName || "—"}
+                              </p>
+                            </td>
+                            <td className="px-6 py-5 text-[14px] font-semibold">
+                              Rp{(order.payment_info?.total_amount || order.totalAmount || 0).toLocaleString("id-ID")}
+                            </td>
+                            <td className="px-6 py-5">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${STATUS_COLORS[order.order_status] || "bg-gray-100 text-gray-600"}`}>
+                                {STATUS_LABEL[order.order_status] || order.order_status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-5">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${SOURCE_COLORS[order.source] || "bg-gray-100 text-gray-600"}`}>
+                                {order.source}
+                              </span>
+                            </td>
+                            <td className="px-6 py-5 text-[#64748b]">
+                              {new Date(order.createdAt).toLocaleDateString("id-ID")}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                
+                {totalPages > 1 && (
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#f1f5f9] px-6 py-5 text-xs text-[#94a3b8]">
+                    <span>Halaman {page} dari {totalPages}</span>
+                    <div className="flex items-center gap-2">
+                      <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} variant="outline" className="h-8 rounded-lg border-[#e2e8f0] px-3 font-semibold text-[#64748b]">Prev</Button>
+                      <Button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} variant="outline" className="h-8 rounded-lg border-[#e2e8f0] px-3 font-semibold text-[#64748b]">Next</Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+          </main>
         </div>
       </div>
 
@@ -233,50 +286,53 @@ export default function Pesanan() {
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-800">
-                  Detail Order {selectedOrder.order_id || `#${selectedOrder._id.slice(-6).toUpperCase()}`}
+                <h2 className="text-lg font-bold text-[#1e293b]">
+                  Detail Order <span className="text-[#64748b] text-base font-medium ml-1">{selectedOrder.order_id || `#${selectedOrder._id.slice(-6).toUpperCase()}`}</span>
                 </h2>
-                <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+                <button onClick={() => setSelectedOrder(null)} className="text-[#94a3b8] hover:text-[#1e293b] text-xl font-bold">✕</button>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                <p className="font-semibold text-gray-800 mb-2">Info Pembeli</p>
-                <p className="text-sm text-gray-600">👤 {selectedOrder.shipping_info?.buyer_name || selectedOrder.customerName}</p>
-                <p className="text-sm text-gray-600">📞 {selectedOrder.shipping_info?.buyer_phone || selectedOrder.customerPhone || "—"}</p>
-                <p className="text-sm text-gray-600">📍 {selectedOrder.shipping_info?.buyer_address || selectedOrder.customerAddress || "—"}</p>
+              <div className="bg-[#f8fafc] rounded-xl p-4 mb-4 border border-[#e2e8f0]">
+                <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider mb-3">Info Pembeli</p>
+                <div className="space-y-1.5">
+                  <p className="text-sm font-semibold text-[#475569] flex items-center gap-2">👤 {selectedOrder.shipping_info?.buyer_name || selectedOrder.customerName}</p>
+                  <p className="text-sm text-[#475569] flex items-center gap-2">📞 {selectedOrder.shipping_info?.buyer_phone || selectedOrder.customerPhone || "—"}</p>
+                  <p className="text-sm text-[#475569] flex items-center gap-2">📍 {selectedOrder.shipping_info?.buyer_address || selectedOrder.customerAddress || "—"}</p>
+                </div>
               </div>
 
-              <div className="mb-4">
-                <p className="font-semibold text-gray-800 mb-2">Item Pesanan</p>
+              <div className="mb-5">
+                <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider mb-3">Item Pesanan</p>
                 <div className="space-y-2">
                   {(selectedOrder.item_list || selectedOrder.items || []).map((item, i) => (
-                    <div key={i} className="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
-                      <span className="text-gray-700">{item.product_name || item.productName} x{item.quantity}</span>
-                      <span className="font-medium">Rp {(item.subtotal || 0).toLocaleString("id-ID")}</span>
+                    <div key={i} className="flex justify-between text-sm border-b border-[#f1f5f9] pb-2 last:border-0 last:pb-0">
+                      <span className="text-[#475569] font-medium">{item.product_name || item.productName} <span className="text-[#94a3b8] ml-1">x{item.quantity}</span></span>
+                      <span className="font-semibold text-[#1e293b]">Rp{(item.subtotal || 0).toLocaleString("id-ID")}</span>
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-between font-bold text-gray-800 mt-3 pt-3 border-t border-gray-200">
-                  <span>Total</span>
-                  <span>Rp {(selectedOrder.payment_info?.total_amount || selectedOrder.totalAmount || 0).toLocaleString("id-ID")}</span>
+                <div className="flex justify-between items-center text-[#1e293b] mt-4 pt-3 border-t-2 border-[#f1f5f9]">
+                  <span className="font-bold">Total Pembayaran</span>
+                  <span className="font-bold text-lg text-[#3182ce]">Rp{(selectedOrder.payment_info?.total_amount || selectedOrder.totalAmount || 0).toLocaleString("id-ID")}</span>
                 </div>
               </div>
 
               {selectedOrder.notes && (
-                <div className="bg-yellow-50 rounded-xl p-3 mb-4 text-sm text-yellow-800">
-                  📝 {selectedOrder.notes}
+                <div className="bg-amber-50 rounded-xl p-3 mb-5 text-sm text-amber-700 border border-amber-200">
+                  <span className="font-bold tracking-wide text-xs mb-1 block">CATATAN :</span>
+                  {selectedOrder.notes}
                 </div>
               )}
 
-              <div className="mb-4">
-                <p className="font-semibold text-gray-800 mb-2">Update Status</p>
+              <div className="mb-6">
+                <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider mb-3">Update Status</p>
                 <div className="flex gap-2 flex-wrap">
                   {STATUS_OPTIONS.map(s => (
                     <button key={s} onClick={() => handleUpdateStatus(selectedOrder._id, s)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
                         selectedOrder.order_status === s
-                          ? (STATUS_COLORS[s] || "") + " ring-2 ring-offset-1"
-                          : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                          ? (STATUS_COLORS[s] || "") + " ring-2 ring-[#3bb0f3] ring-offset-2 scale-105"
+                          : "border-[#e2e8f0] text-[#64748b] bg-white hover:bg-[#f8fafc]"
                       }`}>
                       {STATUS_LABEL[s] || s}
                     </button>
@@ -286,12 +342,12 @@ export default function Pesanan() {
 
               <div className="flex gap-3">
                 <button onClick={() => setSelectedOrder(null)}
-                  className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-xl text-sm hover:bg-gray-50">
+                  className="flex-1 border border-[#e2e8f0] text-[#1e293b] font-semibold py-2.5 rounded-xl text-sm hover:bg-[#f8fafc] transition-colors">
                   Tutup
                 </button>
                 {canDelete(selectedOrder.order_status) && (
                   <button onClick={() => handleDelete(selectedOrder._id)}
-                    className="flex-1 bg-red-500 text-white py-2 rounded-xl text-sm hover:bg-red-600">
+                    className="flex-1 bg-red-50 text-red-600 border border-red-200 font-bold py-2.5 rounded-xl text-sm hover:bg-red-100 transition-colors">
                     Hapus Order
                   </button>
                 )}
@@ -299,6 +355,13 @@ export default function Pesanan() {
             </div>
           </div>
         </div>
+      )}
+
+      {showExportModal && (
+        <ExportOrderModal
+          orders={orders}
+          onClose={() => setShowExportModal(false)}
+        />
       )}
 
       {/* Create Modal */}
@@ -316,11 +379,19 @@ export default function Pesanan() {
 function CreateOrderModal({ onClose, onSuccess }) {
   const [form, setForm] = useState({
     buyer_name: "", buyer_phone: "", buyer_address: "",
-    notes: "", source: "Manual",
+    notes: "", source: "TikTok", // Changed default to TikTok based on user request focus
   });
   const [items, setItems] = useState([{ sku_id: "", product_name: "", quantity: 1, price: 0, subtotal: 0 }]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [inventoryProducts, setInventoryProducts] = useState([]);
+
+  useEffect(() => {
+    // Fetch inventory products so user can select them
+    api.get("/api/inventory")
+      .then(res => setInventoryProducts(Array.isArray(res.data) ? res.data : []))
+      .catch(err => console.error("Gagal load inventori", err));
+  }, []);
 
   const updateItem = (i, field, value) => {
     const updated = [...items];
@@ -328,6 +399,22 @@ function CreateOrderModal({ onClose, onSuccess }) {
     if (field === "quantity" || field === "price") {
       updated[i].subtotal = updated[i].quantity * updated[i].price;
     }
+    setItems(updated);
+  };
+
+  const handleSelectProduct = (i, productId) => {
+    const selected = inventoryProducts.find(p => p._id === productId);
+    if (!selected) return;
+    
+    const sku = selected.skus && selected.skus[0] ? selected.skus[0] : null;
+    const price = sku && sku.price_info ? sku.price_info.original_price : 0;
+    const skuId = sku ? sku.sku_id : "";
+
+    const updated = [...items];
+    updated[i].product_name = selected.product_name || selected.name || "";
+    updated[i].sku_id = skuId;
+    updated[i].price = price;
+    updated[i].subtotal = updated[i].quantity * price;
     setItems(updated);
   };
 
@@ -343,7 +430,7 @@ function CreateOrderModal({ onClose, onSuccess }) {
     setSaving(true);
     try {
       await api.post("/api/orders", {
-        order_id: `ORD-MANUAL-${Date.now()}`,
+        order_id: `ORD-${form.source.toUpperCase()}-${Date.now()}`,
         shipping_info: {
           buyer_name: form.buyer_name,
           buyer_phone: form.buyer_phone,
@@ -367,85 +454,123 @@ function CreateOrderModal({ onClose, onSuccess }) {
     }
   };
 
+  const inputClass = "w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-sm focus:border-[#3182ce] focus:ring-1 focus:ring-[#3182ce] outline-none transition-all";
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-800">Buat Pesanan Baru</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-bold text-[#1e293b]">Buat Pesanan Baru</h2>
+            <button onClick={onClose} className="text-[#94a3b8] hover:text-[#1e293b] font-bold text-xl">✕</button>
           </div>
 
-          {error && <div className="mb-4 px-4 py-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
+          {error && <div className="mb-4 px-4 py-3 bg-red-100 text-red-700 rounded-lg text-sm font-medium">{error}</div>}
 
           <div className="space-y-3">
-            <input placeholder="Nama Pembeli *" value={form.buyer_name}
+            <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider mb-2">Informasi Pembeli</p>
+            <input placeholder="Nama Lengkap Pembeli *" value={form.buyer_name}
               onChange={e => setForm({ ...form, buyer_name: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            <input placeholder="No. Telepon *" value={form.buyer_phone}
+              className={inputClass} />
+            <input placeholder="No. Telepon / WhatsApp *" value={form.buyer_phone}
               onChange={e => setForm({ ...form, buyer_phone: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            <textarea placeholder="Alamat *" value={form.buyer_address}
+              className={inputClass} />
+            <textarea placeholder="Alamat Pengiriman Lengkap *" value={form.buyer_address}
               onChange={e => setForm({ ...form, buyer_address: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" rows={2} />
-            <select value={form.source} onChange={e => setForm({ ...form, source: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option value="Manual">Manual</option>
-              <option value="TikTok">TikTok</option>
-              <option value="Instagram">Instagram</option>
-              <option value="Tokopedia">Tokopedia</option>
-            </select>
+              className={inputClass} rows={2} />
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-[#475569] whitespace-nowrap">Source Order:</span>
+              <select value={form.source} onChange={e => setForm({ ...form, source: e.target.value })}
+                className={inputClass}>
+                <option value="TikTok">TikTok Shop</option>
+                <option value="Manual">Manual (WA/Toko)</option>
+                <option value="Instagram">Instagram</option>
+                <option value="Tokopedia">Tokopedia</option>
+              </select>
+            </div>
           </div>
 
-          <div className="mt-4">
-            <p className="font-semibold text-gray-800 mb-2">Item Pesanan</p>
-            <div className="space-y-2">
+          <div className="mt-6 border-t border-[#f1f5f9] pt-4">
+            <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider mb-3">Item Pesanan</p>
+            <div className="space-y-3">
               {items.map((item, i) => (
-                <div key={i} className="bg-gray-50 rounded-xl p-3 space-y-2">
-                  <div className="flex gap-2">
-                    <input placeholder="SKU (opsional)" value={item.sku_id}
-                      onChange={e => updateItem(i, "sku_id", e.target.value)}
-                      className="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                    <input placeholder="Nama Produk *" value={item.product_name}
-                      onChange={e => updateItem(i, "product_name", e.target.value)}
-                      className="w-2/3 border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                <div key={i} className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-3 space-y-3 relative group">
+                  {/* Pilihan Produk dari Inventori */}
+                  <div className="flex flex-col gap-2">
+                    <select 
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if(val === "") {
+                           updateItem(i, "product_name", "");
+                           updateItem(i, "sku_id", "");
+                           updateItem(i, "price", 0);
+                        } else {
+                           handleSelectProduct(i, val);
+                        }
+                      }}
+                      className={inputClass + " font-semibold text-[#1e293b] cursor-pointer bg-blue-50/30"}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>Pilih Produk dari Inventori (Opsional)</option>
+                      {inventoryProducts.map(inv => (
+                        <option key={inv._id} value={inv._id}>
+                          📦 {inv.product_name || inv.name} — Rp{(inv.skus?.[0]?.price_info?.original_price || 0).toLocaleString("id-ID")}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Jika ingin edit manual namanya */}
+                    <div className="flex gap-2">
+                      <input placeholder="SKU (opsional)" value={item.sku_id}
+                        onChange={e => updateItem(i, "sku_id", e.target.value)}
+                        className={inputClass + " w-1/3 text-xs"} />
+                      <input placeholder="Nama Produk *" value={item.product_name}
+                        onChange={e => updateItem(i, "product_name", e.target.value)}
+                        className={inputClass + " w-2/3"} />
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  
+                  <div className="flex items-center gap-2">
                     <input type="number" placeholder="Qty" min={1} value={item.quantity}
                       onChange={e => updateItem(i, "quantity", Number(e.target.value))}
-                      className="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                    <input type="number" placeholder="Harga" min={0} value={item.price}
+                      className={inputClass + " w-1/4"} />
+                    <span className="text-[#94a3b8] text-xs font-bold">×</span>
+                    <input type="number" placeholder="Harga Satuan" min={0} value={item.price}
                       onChange={e => updateItem(i, "price", Number(e.target.value))}
-                      className="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                    <div className="w-1/3 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-500">
-                      Rp {item.subtotal.toLocaleString("id-ID")}
-                    </div>
+                      className={inputClass + " w-1/3 flex-1"} />
+                    <span className="font-bold text-[#3182ce] whitespace-nowrap px-2">
+                      Rp{item.subtotal.toLocaleString("id-ID")}
+                    </span>
                   </div>
                   {items.length > 1 && (
                     <button onClick={() => setItems(items.filter((_, idx) => idx !== i))}
-                      className="text-red-500 text-xs hover:underline">Hapus item</button>
+                      className="absolute -top-2 -right-2 h-6 w-6 bg-white border border-red-200 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-all font-bold text-xs shadow-sm">
+                      ✕
+                    </button>
                   )}
                 </div>
               ))}
             </div>
             <button onClick={() => setItems([...items, { sku_id: "", product_name: "", quantity: 1, price: 0, subtotal: 0 }])}
-              className="mt-2 text-blue-600 text-sm hover:underline">+ Tambah Item</button>
+              className="mt-3 text-[#3182ce] text-sm font-bold flex items-center gap-1 hover:text-[#2b6cb0]">
+              <Plus className="h-4 w-4" /> Tambah Item Lain
+            </button>
           </div>
 
-          <div className="flex justify-between font-bold text-gray-800 mt-4 pt-4 border-t border-gray-200">
-            <span>Total</span>
-            <span>Rp {totalAmount.toLocaleString("id-ID")}</span>
+          <div className="flex justify-between items-center bg-[#eff6ff] text-[#1e293b] rounded-xl px-4 py-3 mt-5">
+            <span className="font-bold tracking-wide">TOTAL TAGIHAN</span>
+            <span className="font-bold text-lg text-[#3182ce]">Rp{totalAmount.toLocaleString("id-ID")}</span>
           </div>
 
-          <textarea placeholder="Catatan (opsional)" value={form.notes}
+          <textarea placeholder="Catatan untuk pembeli/kurir (opsional)" value={form.notes}
             onChange={e => setForm({ ...form, notes: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-3" rows={2} />
+            className={inputClass + " mt-4"} rows={2} />
 
-          <div className="flex gap-3 mt-4">
-            <button onClick={onClose} className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-xl text-sm hover:bg-gray-50">Batal</button>
+          <div className="flex gap-3 mt-6">
+            <button onClick={onClose} className="flex-1 border border-[#e2e8f0] text-[#1e293b] font-semibold py-2.5 rounded-xl text-sm hover:bg-[#f8fafc] transition-colors">Batal</button>
             <button onClick={handleSubmit} disabled={saving}
-              className="flex-1 bg-blue-600 text-white py-2 rounded-xl text-sm hover:bg-blue-700 disabled:opacity-60">
-              {saving ? "Menyimpan..." : "Buat Pesanan"}
+              className="flex-1 bg-[#4e7da9] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-[#3b6d9c] disabled:opacity-60 transition-all shadow-md">
+              {saving ? "Memproses..." : "Buat Pesanan Sekarang"}
             </button>
           </div>
         </div>
@@ -453,3 +578,137 @@ function CreateOrderModal({ onClose, onSuccess }) {
     </div>
   );
 }
+
+// ── Export Order Modal ──
+function ExportOrderModal({ orders, onClose }) {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [source, setSource] = useState("Semua");
+  const [status, setStatus] = useState("Semua");
+  const [loading, setLoading] = useState(false);
+
+  const handleExport = () => {
+    setLoading(true);
+    setTimeout(() => {
+      // 1. Filter Data
+      const filtered = orders.filter(order => {
+        const orderDate = new Date(order.createdAt).setHours(0,0,0,0);
+        const sDate = startDate ? new Date(startDate).setHours(0,0,0,0) : null;
+        const eDate = endDate ? new Date(endDate).setHours(23,59,59,999) : null;
+
+        const matchStart = !sDate || orderDate >= sDate;
+        const matchEnd = !eDate || orderDate <= eDate;
+        const matchSource = source === "Semua" || order.source === source;
+        const matchStatus = status === "Semua" || order.order_status === status;
+
+        return matchStart && matchEnd && matchSource && matchStatus;
+      });
+
+      if (filtered.length === 0) {
+        alert("Tidak ada data pesanan yang sesuai dengan filter.");
+        setLoading(false);
+        return;
+      }
+
+      // 2. Map ke Array JSON yang siap di-convert jadi baris Excel
+      const dataForExcel = filtered.map(o => {
+        let totalItems = 0;
+        let productNames = [];
+        (o.item_list || o.items || []).forEach(i => {
+          totalItems += Number(i.quantity);
+          productNames.push(`${i.product_name || i.productName} (x${i.quantity})`);
+        });
+
+        return {
+          "Order ID": o.order_id || `#${o._id.slice(-6).toUpperCase()}`,
+          "Tanggal Transaksi": new Date(o.createdAt).toLocaleDateString("id-ID"),
+          "Jam Transaksi": new Date(o.createdAt).toLocaleTimeString("id-ID", { hour: '2-digit', minute:'2-digit' }),
+          "Platform": o.source || "Manual",
+          "Nama Pembeli": o.shipping_info?.buyer_name || o.customerName || "—",
+          "No Telepon": o.shipping_info?.buyer_phone || o.customerPhone || "—",
+          "Alamat": o.shipping_info?.buyer_address || o.customerAddress || "—",
+          "Produk yang Dibeli": productNames.join(", "),
+          "Jml Barang": totalItems,
+          "Total Bayar": o.payment_info?.total_amount || o.totalAmount || 0,
+          "Status Pesanan": STATUS_LABEL[o.order_status] || o.order_status,
+          "Catatan": o.notes || "—"
+        };
+      });
+
+      // 3. Konversi dan Download
+      const ws = XLSX.utils.json_to_sheet(dataForExcel);
+      
+      // Auto-width columns logic based on content
+      const colWidths = [
+        { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
+        { wch: 18 }, { wch: 30 }, { wch: 40 }, { wch: 10 }, { wch: 15 },
+        { wch: 18 }, { wch: 25 }
+      ];
+      ws['!cols'] = colWidths;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Laporan Pesanan");
+
+      const fileName = `Laporan_Pesanan_${new Date().getTime()}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      setLoading(false);
+      onClose();
+    }, 500);
+  };
+
+  const inputClass = "w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-sm focus:border-[#3182ce] focus:ring-1 focus:ring-[#3182ce] outline-none transition-all";
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-bold text-[#1e293b]">Export Pesanan</h2>
+            <button onClick={onClose} className="text-[#94a3b8] hover:text-[#1e293b] font-bold text-xl">✕</button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider mb-2">Pilih Rentang Tanggal</p>
+              <div className="flex gap-2 items-center">
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputClass} />
+                <span className="text-[#94a3b8] font-bold">-</span>
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputClass} />
+              </div>
+              <p className="text-[10px] text-[#94a3b8] mt-1 italic">*kosongkan jika ingin export semua waktu.</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider mb-2">Filter Platform</p>
+              <select value={source} onChange={e => setSource(e.target.value)} className={inputClass}>
+                <option value="Semua">Semua Platform</option>
+                <option value="TikTok">TikTok Shop</option>
+                <option value="Manual">Manual (WA/Toko)</option>
+                <option value="Instagram">Instagram</option>
+                <option value="Tokopedia">Tokopedia</option>
+                <option value="Shopee">Shopee</option>
+              </select>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-[#1e293b] uppercase tracking-wider mb-2">Filter Status</p>
+              <select value={status} onChange={e => setStatus(e.target.value)} className={inputClass}>
+                <option value="Semua">Semua Status</option>
+                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABEL[s] || s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button onClick={onClose} className="flex-1 border border-[#e2e8f0] text-[#1e293b] font-semibold py-2.5 rounded-xl text-sm hover:bg-[#f8fafc] transition-colors">Batal</button>
+            <button onClick={handleExport} disabled={loading}
+              className="flex-1 bg-green-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-green-700 focus:ring-4 focus:ring-green-100 disabled:opacity-60 transition-all shadow-md flex items-center justify-center gap-2">
+              {loading ? "Memproses..." : <><Download className="h-4 w-4"/> Ekspor Excel</>}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
