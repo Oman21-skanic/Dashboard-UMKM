@@ -60,6 +60,17 @@ export default function TikTokExport() {
   const handleExport = async () => {
     setLoading(true);
     setMessage(null);
+
+    // Validasi field wajib
+    for (let i = 0; i < products.length; i++) {
+      const progress = getProgress(i);
+      if (progress.filled < progress.total) {
+        setLoading(false);
+        setMessage({ type: "error", text: `Harap lengkapi semua field yang wajib diisi pada Produk yang ke-${i + 1}.` });
+        return;
+      }
+    }
+
     try {
       const fd = new FormData();
       fd.append("template", templateFile);
@@ -400,10 +411,38 @@ export default function TikTokExport() {
 // Renders the correct input type based on field schema
 // ════════════════════════════════════════════
 function DynamicField({ field, value, onChange }) {
+  const [isUploading, setIsUploading] = useState(false);
   const baseInputClass = "w-full border rounded-lg px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-[#3182ce]/30";
   const borderClass = field.isRequired && !value?.toString().trim()
     ? "border-red-300 bg-red-50/30"
     : "border-[#e2e8f0] bg-white";
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      // Determine token & URL
+      const token = localStorage.getItem("token");
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      
+      const res = await fetch(`${API_URL}/api/upload`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: fd
+      });
+      if (!res.ok) throw new Error("Gagal upload gambar");
+      const data = await res.json();
+      onChange(data.url); // Use the returned URL
+    } catch (err) {
+      alert("Gagal mengupload gambar. Silakan coba lagi.");
+      console.error(err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div>
@@ -454,13 +493,27 @@ function DynamicField({ field, value, onChange }) {
           className={`${baseInputClass} ${borderClass}`}
         />
       ) : field.fieldType === "url" ? (
-        <input
-          type="url"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder={field.example || "https://..."}
-          className={`${baseInputClass} ${borderClass}`}
-        />
+        <div className="flex gap-2 items-center">
+          <input
+            type="url"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={field.example || "https://..."}
+            className={`${baseInputClass} ${borderClass} flex-1`}
+          />
+          <div className="relative shrink-0">
+            {isUploading ? (
+              <div className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#e2e8f0] bg-[#f1f5f9]">
+                <Loader2 className="h-4 w-4 animate-spin text-[#64748b]" />
+              </div>
+            ) : (
+              <label className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#e2e8f0] bg-white hover:bg-[#f8fafc] hover:border-[#3182ce] transition-all" title="Upload Gambar dari Komputer">
+                <Upload className="h-4 w-4 text-[#64748b]" />
+                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+              </label>
+            )}
+          </div>
+        </div>
       ) : (
         <input
           type="text"

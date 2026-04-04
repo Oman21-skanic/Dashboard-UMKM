@@ -4,10 +4,15 @@ const dotenv = require('dotenv');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
+const path = require('path');
 
 dotenv.config();
 
 const app = express();
+
+// Serve uploads as static resources
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // 1. SECURITY HEADERS (Helmet)
 app.use(helmet());
@@ -57,5 +62,6 @@ app.use('/api/auth/tiktok', require('./routes/tiktokAuth'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/tiktok-template', require('./routes/tiktokTemplate'));
+app.use('/api/upload', require('./routes/upload'));
 
 module.exports = app;

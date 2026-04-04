@@ -119,45 +119,53 @@ router.post('/fill-and-export', authenticateToken, upload.single('template'), as
       : [];
     if (!products.length) return res.status(400).json({ msg: 'Minimal 1 produk untuk export.' });
 
-    // Read original template
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-    const tplSheet = workbook.Sheets['Template'];
-    if (!tplSheet) return res.status(400).json({ msg: 'Sheet "Template" tidak ditemukan.' });
-
-    const tplData = XLSX.utils.sheet_to_json(tplSheet, { header: 1, defval: '' });
+    // 1. Read headers using XLSX for fast parsing
+    const workbookXlsx = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const tplSheetXlsx = workbookXlsx.Sheets['Template'];
+    if (!tplSheetXlsx) return res.status(400).json({ msg: 'Sheet "Template" tidak ditemukan.' });
+    
+    const tplData = XLSX.utils.sheet_to_json(tplSheetXlsx, { header: 1, defval: '' });
     const headers = tplData[0] || [];
-    const requiredRow = tplData[1] || [];
-    const descRow = tplData[2] || [];
 
-    // Helper: find value by column name pattern
+    // 2. Load workbook using xlsx-populate to ensure 100% preservation of template structure
+    const XlsxPopulate = require('xlsx-populate');
+    const workbook = await XlsxPopulate.fromDataAsync(req.file.buffer);
+    const tplSheet = workbook.sheet('Template');
+
     const getVal = (values, pattern) => {
       const key = Object.keys(values).find(k => pattern.test(k));
       return key ? String(values[key] || '').trim() : '';
     };
 
-    // Build XLSX rows AND save to Inventory
-    const dataRows = [];
     const savedProducts = [];
+    let startRow = 7; // We append user data explicitly starting from Excel row 7
 
     for (const product of products) {
       const values = product.values || {};
 
-      // 1. Build XLSX row
+      // Build Excel row
       const mainRow = headers.map(h => values[h] !== undefined ? values[h] : '');
-      dataRows.push(mainRow);
+      const row = tplSheet.row(startRow);
+      mainRow.forEach((val, i) => {
+         if (val !== '') row.cell(i + 1).value(val);
+      });
+      startRow++;
 
       if (product.extraRows && product.extraRows.length > 0) {
         product.extraRows.forEach(extra => {
           const extraRow = headers.map(h => extra[h] !== undefined ? extra[h] : (values[h] !== undefined ? values[h] : ''));
-          dataRows.push(extraRow);
+          const xRow = tplSheet.row(startRow);
+          extraRow.forEach((val, i) => {
+            if (val !== '') xRow.cell(i + 1).value(val);
+          });
+          startRow++;
         });
       }
 
-      // 2. Save to Inventory DB
+      // Save to Inventory DB
       const productName = getVal(values, /nama produk/i);
       if (!productName) continue;
 
-      // Extra images (Gambar 2-9)
       const images = [];
       for (let i = 2; i <= 9; i++) {
         const imgKey = Object.keys(values).find(k =>
@@ -199,11 +207,7 @@ router.post('/fill-and-export', authenticateToken, upload.single('template'), as
       savedProducts.push(inventoryItem);
     }
 
-    // Rebuild sheet with data
-    const newData = [headers, requiredRow, descRow, ...dataRows];
-    workbook.Sheets['Template'] = XLSX.utils.aoa_to_sheet(newData);
-
-    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await workbook.outputAsync();
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="tiktok_filled_${Date.now()}.xlsx"`);
