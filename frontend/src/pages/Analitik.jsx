@@ -82,6 +82,8 @@ export default function Analitik() {
   const totalProduk = inventory.length;
 
   const formatRupiah = (val) => {
+    if (val >= 1_000_000_000_000) return `Rp${(val / 1_000_000_000_000).toFixed(1)}T`;
+    if (val >= 1_000_000_000) return `Rp${(val / 1_000_000_000).toFixed(1)}M`;
     if (val >= 1_000_000) return `Rp${(val / 1_000_000).toFixed(1)}jt`;
     if (val >= 1_000) return `Rp${(val / 1_000).toFixed(0)}rb`;
     return `Rp${val.toLocaleString("id-ID")}`;
@@ -135,7 +137,7 @@ export default function Analitik() {
         data[d.getDate() - 1].value += o.payment_info?.total_amount || 0;
       }
     });
-    return data.map((d) => ({ ...d, value: Math.round(d.value / 1000) }));
+    return data;
   })();
 
   const maxDay = trendData.reduce((m, d) => (d.value > m.value ? d : m), trendData[0]);
@@ -252,9 +254,6 @@ export default function Analitik() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]">
-                  <Bell className="h-4 w-4" />
-                </button>
                 <Button className="h-9 rounded-xl bg-[#3b6d9c] px-3 text-xs font-semibold text-white hover:bg-[#2f5f87]">
                   <FileDown className="mr-2 h-4 w-4" />
                   CSV
@@ -262,15 +261,6 @@ export default function Analitik() {
               </div>
             </div>
 
-            <div className="mt-3 md:hidden">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
-                <Input
-                  placeholder="Cari data analitik..."
-                  className="h-9 w-full rounded-xl border border-[#e2e8f0] bg-white/90 pl-9 text-sm focus-visible:ring-[#3bb0f3]"
-                />
-              </div>
-            </div>
 
             <div className="hidden flex-wrap items-center justify-between gap-4 md:flex">
               <div>
@@ -282,16 +272,6 @@ export default function Analitik() {
                 </h1>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
-                  <Input
-                    placeholder="Cari data analitik..."
-                    className="h-10 w-60 rounded-xl border border-[#e2e8f0] bg-white/90 pl-9 text-sm focus-visible:ring-[#3bb0f3]"
-                  />
-                </div>
-                <button className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]">
-                  <Bell className="h-4 w-4" />
-                </button>
                 <Button className="h-10 rounded-xl bg-[#3b6d9c] px-4 text-sm font-semibold text-white hover:bg-[#2f5f87]">
                   <FileDown className="mr-2 h-4 w-4" />
                   Ekspor CSV
@@ -351,7 +331,7 @@ export default function Analitik() {
                           Tren Pendapatan — 30 Hari
                         </CardTitle>
                         <p className="text-xs text-[#7c8ca0]">
-                          {formatRupiah(totalPendapatan)} total bulan ini (dalam ribuan)
+                          {formatRupiah(totalPendapatan)} total bulan ini
                         </p>
                       </div>
                     </CardHeader>
@@ -374,6 +354,8 @@ export default function Analitik() {
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: "#94a3b8", fontSize: 11 }}
+                            tickFormatter={(val) => formatRupiah(val).replace('Rp', '')}
+                            width={50}
                           />
                           <Tooltip
                             contentStyle={{
@@ -382,7 +364,7 @@ export default function Analitik() {
                               backgroundColor: "#ffffff",
                             }}
                             labelStyle={{ color: "#0f2a43", fontWeight: 700 }}
-                            formatter={(value) => [`Rp${value}rb`, "Pendapatan"]}
+                            formatter={(value) => [formatRupiah(value), "Pendapatan"]}
                           />
                           <Bar dataKey="value" barSize={16} radius={[8, 8, 0, 0]}>
                             {trendData.map((entry) => {

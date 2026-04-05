@@ -241,10 +241,6 @@ export default function Inventori() {
                     className="h-10 w-full rounded-xl border border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3]"
                   />
                 </div>
-                <button className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]">
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-[#ef4444]" />
-                </button>
                 <Button
                   onClick={() => setShowExportModal(true)}
                   variant="outline"

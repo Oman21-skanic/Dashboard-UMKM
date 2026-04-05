@@ -58,38 +58,6 @@ const STATUS_LABEL = {
   CANCELLED: "Dibatalkan",
 };
 
-const platformCards = [
-  {
-    name: "TikTok Shop",
-    id: "ID: 8829103",
-    status: "AKTIF",
-    icon: TikTokIcon,
-    iconStyle: "bg-[#0f172a] text-white",
-    gmv: "Rp72,4jt",
-    gmvChange: "+15.2%",
-    liveRevenue: "Rp34,1jt",
-    liveChange: "+12 Sesi/Minggu",
-    metrics: [
-      { label: "Click Through Rate (CTR)", value: 4.2, tone: "#0f2a43" },
-      { label: "Order Conversion Rate", value: 2.8, tone: "#38bdf8" },
-    ],
-  },
-  {
-    name: "Shopee",
-    id: "ID: SP_OFFICIAL_1",
-    status: "AKTIF",
-    icon: Store,
-    iconStyle: "bg-[#f97316] text-white",
-    gmv: "Rp56,0jt",
-    gmvChange: "+5.8%",
-    liveRevenue: "Rp8,5jt",
-    liveChange: "ROAS 6.5x",
-    metrics: [
-      { label: "Search Rank (Top 10)", value: 72, tone: "#f97316" },
-      { label: "Chat Response Rate", value: 98, tone: "#10b981" },
-    ],
-  },
-];
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -151,6 +119,8 @@ export default function Dashboard() {
   const totalProduk = inventory.length;
 
   const formatRupiah = (val) => {
+    if (val >= 1_000_000_000_000) return `Rp${(val / 1_000_000_000_000).toFixed(1)}T`;
+    if (val >= 1_000_000_000) return `Rp${(val / 1_000_000_000).toFixed(1)}M`;
     if (val >= 1_000_000) return `Rp${(val / 1_000_000).toFixed(1)}jt`;
     if (val >= 1_000) return `Rp${(val / 1_000).toFixed(0)}rb`;
     return `Rp${val.toLocaleString("id-ID")}`;
@@ -232,8 +202,8 @@ export default function Dashboard() {
         data[d.getDate() - 1].value += order.payment_info?.total_amount || 0;
       }
     });
-    // Normalize to millions for chart readability
-    return data.map((d) => ({ ...d, value: Math.round(d.value / 1000) }));
+    // Return raw value for correct formatting
+    return data;
   })();
 
   const maxTrendDay = trendData.reduce(
@@ -307,7 +277,7 @@ export default function Dashboard() {
       iconStyle: "bg-[#dbeafe] text-[#1d4ed8]",
     },
     {
-      label: "Diterima Pembeli",
+      label: "Pesanan Selesai",
       detail: `${statusCounts.DELIVERED + statusCounts.COMPLETED} Paket telah sampai tujuan`,
       percent:
         totalPesanan > 0
@@ -325,7 +295,7 @@ export default function Dashboard() {
 
   const statusLogistics = [
     {
-      name: "Diterima",
+      name: "Selesai",
       value: statusCounts.DELIVERED + statusCounts.COMPLETED,
       color: "#102e4a",
     },
@@ -340,22 +310,26 @@ export default function Dashboard() {
       color: "#f97316",
     },
     { name: "Belum Bayar", value: statusCounts.UNPAID, color: "#facc15" },
+    { name: "Dibatalkan", value: statusCounts.CANCELLED, color: "#94a3b8" },
   ].filter((s) => s.value > 0);
 
   // ── Comparison data (daily orders this week) ──
   const comparisonData = (() => {
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const data = days.map((day) => ({ day, manual: 0, tiktok: 0 }));
+    const data = days.map((day) => ({ day, Manual: 0, TikTok: 0, Tokopedia: 0, Instagram: 0, Shopee: 0 }));
     const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay());
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
 
     orders.forEach((o) => {
       const d = new Date(o.createdAt);
       if (d >= weekStart) {
         const dayIndex = d.getDay();
-        if (o.source === "TikTok") data[dayIndex].tiktok++;
-        else data[dayIndex].manual++;
+        const src = o.source || "Manual";
+        if (data[dayIndex][src] !== undefined) {
+          data[dayIndex][src]++;
+        } else {
+          data[dayIndex]["Manual"]++;
+        }
       }
     });
     return data;
@@ -420,36 +394,6 @@ export default function Dashboard() {
                   </h1>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <div className="relative hidden md:block">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
-                  <Input
-                    placeholder="Cari platform..."
-                    className="h-10 w-64 rounded-xl border border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3]"
-                  />
-                </div>
-                <button className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#64748b]">
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-[#fffcf5] bg-[#ef4444]" />
-                </button>
-                <Button className="hidden h-10 rounded-xl bg-[#4e7da9] px-4 text-sm font-semibold text-white hover:bg-[#3b6d9c] md:inline-flex">
-                  Sinkronisasi Data
-                </Button>
-              </div>
-            </div>
-
-            <div className="px-5 pb-4 md:hidden">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
-                <Input
-                  placeholder="Cari platform..."
-                  className="h-9 w-full rounded-xl border border-[#e2e8f0] bg-white/90 pl-9 text-sm focus-visible:ring-[#3bb0f3]"
-                />
-              </div>
-              <Button className="mt-3 h-9 w-full rounded-xl bg-[#4e7da9] text-xs font-semibold text-white hover:bg-[#3b6d9c]">
-                Sinkronisasi Data
-              </Button>
             </div>
           </header>
 
@@ -526,7 +470,7 @@ export default function Dashboard() {
                 </section>
 
                 {/* Revenue Trend + Platform Cards */}
-                <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+                <section>
                   <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
                     <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
                       <div>
@@ -534,8 +478,7 @@ export default function Dashboard() {
                           Pendapatan Harian — Bulan Ini
                         </CardTitle>
                         <p className="text-xs text-[#7c8ca0]">
-                          {formatRupiah(totalPenjualan)} total bulan ini (dalam
-                          ribuan)
+                          {formatRupiah(totalPenjualan)} total bulan ini
                         </p>
                       </div>
                     </CardHeader>
@@ -558,6 +501,8 @@ export default function Dashboard() {
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: "#94a3b8", fontSize: 11 }}
+                            tickFormatter={(val) => formatRupiah(val).replace('Rp', '')}
+                            width={50}
                           />
                           <Tooltip
                             contentStyle={{
@@ -567,7 +512,7 @@ export default function Dashboard() {
                             }}
                             labelStyle={{ color: "#0f2a43", fontWeight: 700 }}
                             formatter={(value) => [
-                              `Rp${value}rb`,
+                              formatRupiah(value),
                               "Pendapatan",
                             ]}
                           />
@@ -589,86 +534,6 @@ export default function Dashboard() {
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>
-
-                  <div className="grid gap-6">
-                    {platformCards.map((platform) => {
-                      const Icon = platform.icon;
-                      return (
-                        <Card
-                          key={platform.name}
-                          className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]"
-                        >
-                          <CardHeader className="flex-row items-start justify-between space-y-0 pb-3">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`flex h-10 w-10 items-center justify-center rounded-xl ${platform.iconStyle}`}
-                              >
-                                <Icon className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <CardTitle className="text-base font-semibold text-[#14293d]">
-                                  {platform.name}
-                                </CardTitle>
-                                <p className="text-xs text-[#7c8ca0]">
-                                  {platform.id}
-                                </p>
-                              </div>
-                            </div>
-                            <span className="rounded-full bg-[#e7f7ef] px-2.5 py-1 text-[0.65rem] font-semibold text-[#1f9d6a]">
-                              {platform.status}
-                            </span>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <div className="rounded-xl border border-[#eef2f7] bg-[#f8fafc] p-3">
-                                <p className="text-[0.65rem] font-semibold uppercase text-[#94a3b8]">
-                                  GMV (30 Hari)
-                                </p>
-                                <p className="text-lg font-semibold text-[#14293d]">
-                                  {platform.gmv}
-                                </p>
-                                <p className="text-xs text-[#1f9d6a]">
-                                  {platform.gmvChange}
-                                </p>
-                              </div>
-                              <div className="rounded-xl border border-[#eef2f7] bg-[#f8fafc] p-3">
-                                <p className="text-[0.65rem] font-semibold uppercase text-[#94a3b8]">
-                                  Live Revenue
-                                </p>
-                                <p className="text-lg font-semibold text-[#14293d]">
-                                  {platform.liveRevenue}
-                                </p>
-                                <p className="text-xs text-[#3b82f6]">
-                                  {platform.liveChange}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="space-y-3">
-                              {platform.metrics.map((metric) => (
-                                <div key={metric.label} className="space-y-2">
-                                  <div className="flex items-center justify-between text-xs text-[#7c8ca0]">
-                                    <span>{metric.label}</span>
-                                    <span className="font-semibold text-[#14293d]">
-                                      {metric.value}%
-                                    </span>
-                                  </div>
-                                  <div className="h-2 w-full rounded-full bg-[#e2e8f0]">
-                                    <div
-                                      className="h-2 rounded-full"
-                                      style={{
-                                        width: `${metric.value}%`,
-                                        backgroundColor: metric.tone,
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
                 </section>
 
                 {/* Recent Orders + Top Products */}
@@ -842,18 +707,15 @@ export default function Dashboard() {
                           Perbandingan Sumber Order
                         </CardTitle>
                         <p className="text-xs text-[#7c8ca0]">
-                          Manual vs TikTok (Mingguan)
+                          Sebaran sumber order performa (Mingguan)
                         </p>
                       </div>
-                      <div className="flex items-center gap-4 text-xs font-semibold text-[#7c8ca0]">
-                        <span className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 rounded-full bg-[#102e4a]" />
-                          Manual
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 rounded-full bg-[#38bdf8]" />
-                          TikTok
-                        </span>
+                      <div className="flex flex-wrap items-center justify-end gap-3 text-xs font-semibold text-[#7c8ca0]">
+                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#3b82f6]" />Manual</span>
+                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#14b8a6]" />TikTok</span>
+                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#22c55e]" />Tokopedia</span>
+                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#ec4899]" />Instagram</span>
+                        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#f97316]" />Shopee</span>
                       </div>
                     </CardHeader>
                     <CardContent className="h-56 sm:h-72">
@@ -884,13 +746,29 @@ export default function Dashboard() {
                             labelStyle={{ color: "#0f2a43", fontWeight: 700 }}
                           />
                           <Bar
-                            dataKey="manual"
-                            fill="#102e4a"
-                            radius={[6, 6, 0, 0]}
+                            dataKey="Manual"
+                            stackId="a"
+                            fill="#3b82f6"
                           />
                           <Bar
-                            dataKey="tiktok"
-                            fill="#38bdf8"
+                            dataKey="TikTok"
+                            stackId="a"
+                            fill="#14b8a6"
+                          />
+                          <Bar
+                            dataKey="Tokopedia"
+                            stackId="a"
+                            fill="#22c55e"
+                          />
+                          <Bar
+                            dataKey="Instagram"
+                            stackId="a"
+                            fill="#ec4899"
+                          />
+                          <Bar
+                            dataKey="Shopee"
+                            stackId="a"
+                            fill="#f97316"
                             radius={[6, 6, 0, 0]}
                           />
                         </BarChart>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Menu, Plus, Search, Download } from "lucide-react";
+import { Menu, Plus, Search, Download, Calendar } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/apiClient";
@@ -16,7 +16,6 @@ const STATUS_OPTIONS = [
   "AWAITING_SHIPMENT",
   "IN_TRANSIT",
   "DELIVERED",
-  "COMPLETED",
   "CANCELLED",
 ];
 
@@ -25,7 +24,7 @@ const STATUS_COLORS = {
   AWAITING_SHIPMENT: "bg-yellow-100 text-yellow-700 border border-yellow-300",
   AWAITING_COLLECTION: "bg-orange-100 text-orange-700 border border-orange-300",
   IN_TRANSIT: "bg-purple-100 text-purple-700 border border-purple-300",
-  DELIVERED: "bg-green-100 text-green-700 border border-green-300",
+  DELIVERED: "bg-emerald-100 text-emerald-700 border border-emerald-300",
   COMPLETED: "bg-emerald-100 text-emerald-700 border border-emerald-300",
   CANCELLED: "bg-gray-100 text-gray-500 border border-gray-300",
 };
@@ -35,7 +34,7 @@ const STATUS_LABEL = {
   AWAITING_SHIPMENT: "Menunggu Kirim",
   AWAITING_COLLECTION: "Siap Diambil",
   IN_TRANSIT: "Dalam Perjalanan",
-  DELIVERED: "Diterima",
+  DELIVERED: "Selesai",
   COMPLETED: "Selesai",
   CANCELLED: "Dibatalkan",
 };
@@ -153,7 +152,7 @@ export default function Pesanan() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="hidden flex-wrap items-center justify-end gap-3 md:flex">
                 <Button onClick={() => setShowExportModal(true)} variant="outline" className="h-10 rounded-xl px-4 text-sm font-semibold text-[#64748b] bg-white border-[#e2e8f0]">
                   <Download className="mr-2 h-4 w-4" /> Export Data
                 </Button>
@@ -161,6 +160,16 @@ export default function Pesanan() {
                   <Plus className="mr-2 h-4 w-4" />Buat Pesanan
                 </Button>
               </div>
+            </div>
+            
+            {/* Mobile Actions Header Add-on */}
+            <div className="mt-4 flex gap-2 md:hidden px-5">
+              <Button onClick={() => setShowExportModal(true)} variant="outline" className="h-9 flex-1 rounded-xl bg-white border-[#e2e8f0] text-[#64748b] text-xs font-semibold px-2">
+                <Download className="mr-1 h-3 w-3 shrink-0" /> Export
+              </Button>
+              <Button onClick={() => setShowCreateModal(true)} className="h-9 flex-1 rounded-xl bg-[#4e7da9] text-xs font-semibold text-white hover:bg-[#3b6d9c] px-2">
+                <Plus className="mr-1 h-4 w-4 shrink-0" /> Buat Pesanan
+              </Button>
             </div>
           </header>
 
@@ -243,18 +252,23 @@ export default function Pesanan() {
                               {STATUS_LABEL[order.order_status] || order.order_status}
                             </span>
                           </div>
-                          <div className="mt-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${SOURCE_COLORS[order.source] || "bg-gray-100 text-gray-600"}`}>
-                                {order.source || "Manual"}
-                              </span>
-                              <span className="text-xs text-[#94a3b8]">
-                                {new Date(order.createdAt).toLocaleDateString("id-ID")}
+                          <div className="mt-4 pt-4 border-t border-slate-100 flex items-start justify-between gap-2">
+                            <div className="flex flex-col gap-2 min-w-0">
+                              <div>
+                                <span className={`px-2 py-0.5 rounded-lg text-[10px] uppercase tracking-wider font-bold ${SOURCE_COLORS[order.source] || "bg-gray-100 text-gray-600"}`}>
+                                  {order.source || "Manual"}
+                                </span>
+                              </div>
+                              <span className="text-[15px] font-extrabold text-[#0f172a] truncate">
+                                Rp{(order.payment_info?.total_amount || order.totalAmount || 0).toLocaleString("id-ID")}
                               </span>
                             </div>
-                            <span className="text-sm font-bold text-[#1e293b]">
-                              Rp{(order.payment_info?.total_amount || order.totalAmount || 0).toLocaleString("id-ID")}
-                            </span>
+                            <div className="flex shrink-0 items-center gap-1.5 text-[#64748b] bg-[#f8fafc] px-2 py-1 rounded-lg border border-[#f1f5f9]">
+                              <Calendar className="h-3.5 w-3.5" />
+                              <span className="text-[10px] font-bold tracking-wide">
+                                {new Date(order.createdAt).toLocaleDateString("id-ID", { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       ))}
