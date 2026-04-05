@@ -14,15 +14,12 @@ import TikTokIcon from "@/component/TikTokIcon";
 
 const mainNav = [
   { label: "Beranda", icon: Home, to: "/dashboard" },
-  { label: "Pesanan", icon: ClipboardList, to: "/pesanan", badge: 3 },
-  { label: "Inventori", icon: Archive, to: "/inventori", badge: 2 },
+  { label: "Pesanan", icon: ClipboardList, to: "/pesanan" },
+  { label: "Inventori", icon: Archive, to: "/inventori" },
   { label: "Analitik", icon: LineChart, to: "/analitik" },
 ];
 
-const platformNav = [
-  { label: "TikTok Shop", icon: TikTokIcon, status: "online" },
-  { label: "Shopee", icon: Store, status: "online" },
-];
+
 
 const toolsNav = [
   {
@@ -102,35 +99,6 @@ export default function SidebarContent({
         </nav>
       </div>
 
-      <div className="mt-6">
-        <p className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
-          Platform
-        </p>
-        <nav className="mt-4 space-y-1">
-          {platformNav.map((item) => {
-            const Icon = item.icon;
-            const content = (
-              <button
-                key={item.label}
-                type="button"
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <Icon className="h-4 w-4" />
-                <span className="flex-1">{item.label}</span>
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              </button>
-            );
-
-            return CloseWrapper ? (
-              <CloseWrapper key={item.label} asChild>
-                {content}
-              </CloseWrapper>
-            ) : (
-              content
-            );
-          })}
-        </nav>
-      </div>
 
       <div className="mt-6">
         <p className="px-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/40">

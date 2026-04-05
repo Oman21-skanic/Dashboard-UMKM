@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import AuthBottomNav from "@/component/AuthBottomNav";
 import AuthShell from "@/component/AuthShell";
-import TikTokIcon from "@/component/TikTokIcon";
 import { Input } from "@/component/ui/input";
 import { Button } from "@/component/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -222,21 +221,6 @@ export default function Register() {
           </Button>
         </form>
 
-        <div className="flex items-center gap-3 lg:gap-4">
-          <span className="h-px flex-1 bg-[rgba(21,58,92,0.15)]" />
-          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-[#7c858f] lg:text-[0.82rem] lg:tracking-[0.02em]">
-            ATAU HUBUNGKAN AKUN
-          </span>
-          <span className="h-px flex-1 bg-[rgba(21,58,92,0.15)]" />
-        </div>
-
-        <Button
-          type="button"
-          className="h-12 w-full rounded-xl bg-black text-base font-semibold text-white hover:bg-black/90 lg:h-[3.35rem] lg:text-[1.15rem]"
-        >
-          <TikTokIcon className="h-[1em]! w-[1em]! shrink-0" />
-          Hubungkan TikTok Shop
-        </Button>
 
         <AuthBottomNav activeItem="login" />
       </section>

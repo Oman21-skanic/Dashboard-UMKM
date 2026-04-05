@@ -388,30 +388,6 @@ export default function Setelan() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-4 border rounded-xl bg-white shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-full ${user?.channels?.length > 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
-                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12.525.02c1.31-.02 2.61-.01 3.91 0 .08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.95v5.25c-.01 3.94-3.56 7.19-7.46 6.64-3.66-.52-6.41-3.66-6.45-7.39-.02-3.8 3.19-7.06 6.96-7.06.07 0 .14 0 .21.01v4.06c-1.62-.05-3.08.83-3.63 2.34-.54 1.48.06 3.14 1.44 3.92 1.34.76 3.04.56 4.14-.49 1.09-1.04 1.34-2.85 1.34-4.27V.02z"/>
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="font-semibold text-sm text-[#0f172a]">TikTok Shop API</p>
-                            <p className="text-xs text-muted-foreground">Koneksi toko TikTok Anda</p>
-                          </div>
-                        </div>
-                        <div>
-                          {user?.channels?.length > 0 ? (
-                            <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Terhubung
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-200">
-                              Belum Terhubung
-                            </span>
-                          )}
-                        </div>
-                      </div>
 
                     </CardContent>
                   </Card>
