@@ -31,7 +31,12 @@ import TikTokIcon from "@/component/TikTokIcon";
 import { Button } from "@/component/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/component/ui/card";
 import { Input } from "@/component/ui/input";
-import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/component/ui/sheet";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTrigger,
+} from "@/component/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/api/apiClient";
 
@@ -45,9 +50,12 @@ const statusTone = {
 };
 
 const STATUS_LABEL = {
-  UNPAID: "Belum Bayar", AWAITING_SHIPMENT: "Menunggu Kirim",
-  IN_TRANSIT: "Dalam Perjalanan", DELIVERED: "Diterima",
-  COMPLETED: "Selesai", CANCELLED: "Dibatalkan",
+  UNPAID: "Belum Bayar",
+  AWAITING_SHIPMENT: "Menunggu Kirim",
+  IN_TRANSIT: "Dalam Perjalanan",
+  DELIVERED: "Diterima",
+  COMPLETED: "Selesai",
+  CANCELLED: "Dibatalkan",
 };
 
 const platformCards = [
@@ -135,7 +143,10 @@ export default function Dashboard() {
   }, [fetchOrders, fetchInventory]);
 
   // ── Computed KPIs ──
-  const totalPenjualan = orders.reduce((sum, o) => sum + (o.payment_info?.total_amount || 0), 0);
+  const totalPenjualan = orders.reduce(
+    (sum, o) => sum + (o.payment_info?.total_amount || 0),
+    0,
+  );
   const totalPesanan = orders.length;
   const totalProduk = inventory.length;
 
@@ -158,7 +169,11 @@ export default function Dashboard() {
     {
       label: "Total Pesanan",
       value: totalPesanan.toLocaleString("id-ID"),
-      change: orders.filter((o) => o.order_status === "DELIVERED" || o.order_status === "COMPLETED").length + " selesai",
+      change:
+        orders.filter(
+          (o) =>
+            o.order_status === "DELIVERED" || o.order_status === "COMPLETED",
+        ).length + " selesai",
       description: "Pesanan terdaftar",
       icon: ShoppingCart,
       iconStyle: "bg-[#e7f7ef] text-[#1f9d6a]",
@@ -166,7 +181,10 @@ export default function Dashboard() {
     },
     {
       label: "Rata-rata Order",
-      value: totalPesanan > 0 ? formatRupiah(Math.round(totalPenjualan / totalPesanan)) : "Rp0",
+      value:
+        totalPesanan > 0
+          ? formatRupiah(Math.round(totalPenjualan / totalPesanan))
+          : "Rp0",
       change: totalPesanan > 0 ? `dari ${totalPesanan} order` : "—",
       description: "Nilai rata-rata per pesanan",
       icon: Percent,
@@ -180,23 +198,37 @@ export default function Dashboard() {
       description: "Produk di inventory",
       icon: Users,
       iconStyle: "bg-[#f1eaff] text-[#7c3aed]",
-      changeStyle: inventory.filter((i) => (i.skus || []).reduce((s, sk) => s + (sk.stock_info?.available_stock || 0), 0) <= 10).length > 0
-        ? "bg-[#fff2e7] text-[#f97316]"
-        : "bg-[#e7f7ef] text-[#1f9d6a]",
+      changeStyle:
+        inventory.filter(
+          (i) =>
+            (i.skus || []).reduce(
+              (s, sk) => s + (sk.stock_info?.available_stock || 0),
+              0,
+            ) <= 10,
+        ).length > 0
+          ? "bg-[#fff2e7] text-[#f97316]"
+          : "bg-[#e7f7ef] text-[#1f9d6a]",
     },
   ];
 
   // ── Trend Data (group orders by day of month) ──
   const trendData = (() => {
     const now = new Date();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysInMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
     const data = Array.from({ length: daysInMonth }, (_, i) => ({
       day: i + 1,
       value: 0,
     }));
     orders.forEach((order) => {
       const d = new Date(order.createdAt);
-      if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+      if (
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()
+      ) {
         data[d.getDate() - 1].value += order.payment_info?.total_amount || 0;
       }
     });
@@ -204,7 +236,10 @@ export default function Dashboard() {
     return data.map((d) => ({ ...d, value: Math.round(d.value / 1000) }));
   })();
 
-  const maxTrendDay = trendData.reduce((max, d) => (d.value > max.value ? d : max), trendData[0]);
+  const maxTrendDay = trendData.reduce(
+    (max, d) => (d.value > max.value ? d : max),
+    trendData[0],
+  );
   const highlightDays = new Set(maxTrendDay ? [maxTrendDay.day] : []);
 
   // ── Recent Orders (latest 5) ──
@@ -250,7 +285,9 @@ export default function Dashboard() {
   // ── Logistics ──
   const statusCounts = {
     UNPAID: orders.filter((o) => o.order_status === "UNPAID").length,
-    AWAITING_SHIPMENT: orders.filter((o) => o.order_status === "AWAITING_SHIPMENT").length,
+    AWAITING_SHIPMENT: orders.filter(
+      (o) => o.order_status === "AWAITING_SHIPMENT",
+    ).length,
     IN_TRANSIT: orders.filter((o) => o.order_status === "IN_TRANSIT").length,
     DELIVERED: orders.filter((o) => o.order_status === "DELIVERED").length,
     COMPLETED: orders.filter((o) => o.order_status === "COMPLETED").length,
@@ -261,7 +298,10 @@ export default function Dashboard() {
     {
       label: "Dalam Perjalanan",
       detail: `${statusCounts.IN_TRANSIT} Paket sedang dikirim kurir`,
-      percent: totalPesanan > 0 ? ((statusCounts.IN_TRANSIT / totalPesanan) * 100).toFixed(1) : 0,
+      percent:
+        totalPesanan > 0
+          ? ((statusCounts.IN_TRANSIT / totalPesanan) * 100).toFixed(1)
+          : 0,
       color: "#102e4a",
       icon: Truck,
       iconStyle: "bg-[#dbeafe] text-[#1d4ed8]",
@@ -269,7 +309,14 @@ export default function Dashboard() {
     {
       label: "Diterima Pembeli",
       detail: `${statusCounts.DELIVERED + statusCounts.COMPLETED} Paket telah sampai tujuan`,
-      percent: totalPesanan > 0 ? (((statusCounts.DELIVERED + statusCounts.COMPLETED) / totalPesanan) * 100).toFixed(1) : 0,
+      percent:
+        totalPesanan > 0
+          ? (
+              ((statusCounts.DELIVERED + statusCounts.COMPLETED) /
+                totalPesanan) *
+              100
+            ).toFixed(1)
+          : 0,
       color: "#059669",
       icon: CheckCircle2,
       iconStyle: "bg-[#d1fae5] text-[#059669]",
@@ -277,9 +324,21 @@ export default function Dashboard() {
   ];
 
   const statusLogistics = [
-    { name: "Diterima", value: statusCounts.DELIVERED + statusCounts.COMPLETED, color: "#102e4a" },
-    { name: "Dalam Perjalanan", value: statusCounts.IN_TRANSIT, color: "#38bdf8" },
-    { name: "Menunggu Kirim", value: statusCounts.AWAITING_SHIPMENT, color: "#f97316" },
+    {
+      name: "Diterima",
+      value: statusCounts.DELIVERED + statusCounts.COMPLETED,
+      color: "#102e4a",
+    },
+    {
+      name: "Dalam Perjalanan",
+      value: statusCounts.IN_TRANSIT,
+      color: "#38bdf8",
+    },
+    {
+      name: "Menunggu Kirim",
+      value: statusCounts.AWAITING_SHIPMENT,
+      color: "#f97316",
+    },
     { name: "Belum Bayar", value: statusCounts.UNPAID, color: "#facc15" },
   ].filter((s) => s.value > 0);
 
@@ -408,7 +467,13 @@ export default function Dashboard() {
                       Selamat datang, {displayName} 👋
                     </h2>
                     <p className="text-sm text-[#94a3b8]">
-                      Update terakhir: {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                      Update terakhir:{" "}
+                      {new Date().toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -424,7 +489,7 @@ export default function Dashboard() {
                 </section>
 
                 {/* KPI Cards */}
-                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   {kpiCards.map((card) => {
                     const Icon = card.icon;
                     return (
@@ -461,7 +526,7 @@ export default function Dashboard() {
                 </section>
 
                 {/* Revenue Trend + Platform Cards */}
-                <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+                <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
                   <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
                     <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
                       <div>
@@ -469,7 +534,8 @@ export default function Dashboard() {
                           Pendapatan Harian — Bulan Ini
                         </CardTitle>
                         <p className="text-xs text-[#7c8ca0]">
-                          {formatRupiah(totalPenjualan)} total bulan ini (dalam ribuan)
+                          {formatRupiah(totalPenjualan)} total bulan ini (dalam
+                          ribuan)
                         </p>
                       </div>
                     </CardHeader>
@@ -500,9 +566,16 @@ export default function Dashboard() {
                               backgroundColor: "#ffffff",
                             }}
                             labelStyle={{ color: "#0f2a43", fontWeight: 700 }}
-                            formatter={(value) => [`Rp${value}rb`, "Pendapatan"]}
+                            formatter={(value) => [
+                              `Rp${value}rb`,
+                              "Pendapatan",
+                            ]}
                           />
-                          <Bar dataKey="value" barSize={16} radius={[8, 8, 0, 0]}>
+                          <Bar
+                            dataKey="value"
+                            barSize={16}
+                            radius={[8, 8, 0, 0]}
+                          >
                             {trendData.map((entry) => {
                               const fill = highlightDays.has(entry.day)
                                 ? "#0f2a43"
@@ -658,7 +731,8 @@ export default function Dashboard() {
                                     </span>
                                     <span
                                       className={`rounded-full px-2 py-0.5 text-[0.65rem] font-semibold ${
-                                        statusTone[order.status] || "bg-gray-100 text-gray-600"
+                                        statusTone[order.status] ||
+                                        "bg-gray-100 text-gray-600"
                                       }`}
                                     >
                                       {order.statusLabel}
@@ -690,7 +764,8 @@ export default function Dashboard() {
                                   </div>
                                   <span
                                     className={`rounded-full px-2 py-0.5 text-[0.65rem] font-semibold ${
-                                      statusTone[order.status] || "bg-gray-100 text-gray-600"
+                                      statusTone[order.status] ||
+                                      "bg-gray-100 text-gray-600"
                                     }`}
                                   >
                                     {order.statusLabel}
@@ -808,8 +883,16 @@ export default function Dashboard() {
                             }}
                             labelStyle={{ color: "#0f2a43", fontWeight: 700 }}
                           />
-                          <Bar dataKey="manual" fill="#102e4a" radius={[6, 6, 0, 0]} />
-                          <Bar dataKey="tiktok" fill="#38bdf8" radius={[6, 6, 0, 0]} />
+                          <Bar
+                            dataKey="manual"
+                            fill="#102e4a"
+                            radius={[6, 6, 0, 0]}
+                          />
+                          <Bar
+                            dataKey="tiktok"
+                            fill="#38bdf8"
+                            radius={[6, 6, 0, 0]}
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -913,7 +996,10 @@ export default function Dashboard() {
                           </div>
                           <div className="flex flex-wrap items-center gap-6 text-xs text-[#7c8ca0]">
                             {statusLogistics.map((entry) => (
-                              <div key={entry.name} className="flex items-center gap-2">
+                              <div
+                                key={entry.name}
+                                className="flex items-center gap-2"
+                              >
                                 <span
                                   className="h-2.5 w-2.5 rounded-full"
                                   style={{ backgroundColor: entry.color }}

@@ -176,31 +176,35 @@ export default function Pesanan() {
 
             {/* Filters */}
             <Card className="border-[#f1f5f9] shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-              <CardContent className="p-4 flex flex-wrap gap-3 items-center">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
-                  <Input 
-                    placeholder="Cari Order ID atau nama pembeli..."
-                    value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-                    className="h-10 w-full rounded-xl border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3]" 
-                  />
+              <CardContent className="p-4">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <div className="relative flex-1 min-w-[180px]">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
+                    <Input 
+                      placeholder="Cari order atau nama pembeli..."
+                      value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+                      className="h-10 w-full rounded-xl border-[#e2e8f0] bg-white pl-9 text-sm focus-visible:ring-[#3bb0f3]" 
+                    />
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+                      className="h-10 rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-sm text-[#0f172a] focus:ring-[#3bb0f3] min-w-[130px]">
+                      <option value="">Semua Status</option>
+                      {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABEL[s] || s}</option>)}
+                    </select>
+                    <select value={filterSource} onChange={e => { setFilterSource(e.target.value); setPage(1); }}
+                      className="h-10 rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-sm text-[#0f172a] focus:ring-[#3bb0f3] min-w-[130px]">
+                      <option value="">Semua Source</option>
+                      <option value="Manual">Manual</option>
+                      <option value="TikTok">TikTok</option>
+                      <option value="Instagram">Instagram</option>
+                      <option value="Tokopedia">Tokopedia</option>
+                    </select>
+                    <Button variant="outline" onClick={() => setSortDesc(prev => !prev)} className="h-10 rounded-xl border-[#e2e8f0] px-4 text-sm font-semibold text-[#64748b] whitespace-nowrap">
+                      Tanggal {sortDesc ? "↓" : "↑"}
+                    </Button>
+                  </div>
                 </div>
-                <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
-                  className="h-10 rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-sm text-[#0f172a] focus:ring-[#3bb0f3]">
-                  <option value="">Semua Status</option>
-                  {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_LABEL[s] || s}</option>)}
-                </select>
-                <select value={filterSource} onChange={e => { setFilterSource(e.target.value); setPage(1); }}
-                  className="h-10 rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-sm text-[#0f172a] focus:ring-[#3bb0f3]">
-                  <option value="">Semua Source</option>
-                  <option value="Manual">Manual</option>
-                  <option value="TikTok">TikTok</option>
-                  <option value="Instagram">Instagram</option>
-                  <option value="Tokopedia">Tokopedia</option>
-                </select>
-                <Button variant="outline" onClick={() => setSortDesc(prev => !prev)} className="h-10 rounded-xl border-[#e2e8f0] px-4 text-sm font-semibold text-[#64748b]">
-                  Tanggal {sortDesc ? "↓" : "↑"}
-                </Button>
               </CardContent>
             </Card>
 
@@ -217,51 +221,92 @@ export default function Pesanan() {
                     <p className="text-sm font-semibold">Belum ada pesanan{search ? " yang cocok" : ""}</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-[880px] w-full text-left text-[12px]">
-                      <thead className="bg-[#f8fafc] text-[10px] font-bold uppercase tracking-[1px] text-[#94a3b8]">
-                        <tr>
-                          <th className="px-6 py-4">Order ID</th>
-                          <th className="px-6 py-4">Pembeli</th>
-                          <th className="px-6 py-4">Total</th>
-                          <th className="px-6 py-4">Status</th>
-                          <th className="px-6 py-4">Source</th>
-                          <th className="px-6 py-4">Tanggal</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#f1f5f9] text-[12px] font-medium text-[#1e293b]">
-                        {paginated.map(order => (
-                          <tr key={order._id} onClick={() => setSelectedOrder(order)}
-                            className="hover:bg-[#f8fafc] cursor-pointer transition-colors">
-                            <td className="px-6 py-5 font-mono font-semibold text-[#64748b] text-[13px]">
-                              {order.order_id || `#${order._id.slice(-6).toUpperCase()}`}
-                            </td>
-                            <td className="px-6 py-5">
-                              <p className="text-[14px] font-semibold text-[#1e293b]">
+                  <>
+                    {/* Mobile cards */}
+                    <div className="space-y-3 p-4 md:hidden">
+                      {paginated.map(order => (
+                        <div
+                          key={`${order._id}-mobile`}
+                          onClick={() => setSelectedOrder(order)}
+                          className="rounded-xl border border-[#eef2f7] bg-white p-4 shadow-[0_4px_12px_rgba(15,42,67,0.06)] cursor-pointer hover:shadow-[0_8px_24px_rgba(15,42,67,0.1)] hover:border-[#d5e0ea] transition-all"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-[#1e293b] truncate">
                                 {order.shipping_info?.buyer_name || order.customerName || "—"}
                               </p>
-                            </td>
-                            <td className="px-6 py-5 text-[14px] font-semibold">
+                              <p className="text-xs text-[#94a3b8] font-mono mt-0.5">
+                                {order.order_id || `#${order._id.slice(-6).toUpperCase()}`}
+                              </p>
+                            </div>
+                            <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${STATUS_COLORS[order.order_status] || "bg-gray-100 text-gray-600"}`}>
+                              {STATUS_LABEL[order.order_status] || order.order_status}
+                            </span>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${SOURCE_COLORS[order.source] || "bg-gray-100 text-gray-600"}`}>
+                                {order.source || "Manual"}
+                              </span>
+                              <span className="text-xs text-[#94a3b8]">
+                                {new Date(order.createdAt).toLocaleDateString("id-ID")}
+                              </span>
+                            </div>
+                            <span className="text-sm font-bold text-[#1e293b]">
                               Rp{(order.payment_info?.total_amount || order.totalAmount || 0).toLocaleString("id-ID")}
-                            </td>
-                            <td className="px-6 py-5">
-                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${STATUS_COLORS[order.order_status] || "bg-gray-100 text-gray-600"}`}>
-                                {STATUS_LABEL[order.order_status] || order.order_status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-5">
-                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${SOURCE_COLORS[order.source] || "bg-gray-100 text-gray-600"}`}>
-                                {order.source}
-                              </span>
-                            </td>
-                            <td className="px-6 py-5 text-[#64748b]">
-                              {new Date(order.createdAt).toLocaleDateString("id-ID")}
-                            </td>
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop table */}
+                    <div className="hidden overflow-x-auto md:block">
+                      <table className="min-w-[880px] w-full text-left text-[12px]">
+                        <thead className="bg-[#f8fafc] text-[10px] font-bold uppercase tracking-[1px] text-[#94a3b8]">
+                          <tr>
+                            <th className="px-6 py-4">Order ID</th>
+                            <th className="px-6 py-4">Pembeli</th>
+                            <th className="px-6 py-4">Total</th>
+                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4">Source</th>
+                            <th className="px-6 py-4">Tanggal</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-[#f1f5f9] text-[12px] font-medium text-[#1e293b]">
+                          {paginated.map(order => (
+                            <tr key={order._id} onClick={() => setSelectedOrder(order)}
+                              className="hover:bg-[#f8fafc] cursor-pointer transition-colors">
+                              <td className="px-6 py-5 font-mono font-semibold text-[#64748b] text-[13px]">
+                                {order.order_id || `#${order._id.slice(-6).toUpperCase()}`}
+                              </td>
+                              <td className="px-6 py-5">
+                                <p className="text-[14px] font-semibold text-[#1e293b]">
+                                  {order.shipping_info?.buyer_name || order.customerName || "—"}
+                                </p>
+                              </td>
+                              <td className="px-6 py-5 text-[14px] font-semibold">
+                                Rp{(order.payment_info?.total_amount || order.totalAmount || 0).toLocaleString("id-ID")}
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${STATUS_COLORS[order.order_status] || "bg-gray-100 text-gray-600"}`}>
+                                  {STATUS_LABEL[order.order_status] || order.order_status}
+                                </span>
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${SOURCE_COLORS[order.source] || "bg-gray-100 text-gray-600"}`}>
+                                  {order.source}
+                                </span>
+                              </td>
+                              <td className="px-6 py-5 text-[#64748b]">
+                                {new Date(order.createdAt).toLocaleDateString("id-ID")}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
                 
                 {totalPages > 1 && (
