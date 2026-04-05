@@ -10,6 +10,10 @@ dotenv.config();
 
 const app = express();
 
+// Konfigurasi Trust Proxy (Sangat penting untuk Railway/Vercel/Cloudflare)
+// Menangani header X-Forwarded-For agar express-rate-limit bisa membaca IP user asli
+app.set('trust proxy', 1);
+
 // Serve uploads as static resources
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
