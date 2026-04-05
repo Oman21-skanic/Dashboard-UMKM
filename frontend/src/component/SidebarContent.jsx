@@ -25,7 +25,11 @@ const platformNav = [
 ];
 
 const toolsNav = [
-  { label: "TikTok Export/Import", icon: FileSpreadsheet, to: "/tiktok-export" },
+  {
+    label: "TikTok Export/Import",
+    icon: FileSpreadsheet,
+    to: "/tiktok-export",
+  },
 ];
 
 const miscNav = [{ label: "Setelan", icon: Settings, to: "/setelan" }];
@@ -62,9 +66,7 @@ function SidebarNavItem({ item, CloseWrapper }) {
     return content;
   }
 
-  return (
-    <CloseWrapper asChild>{content}</CloseWrapper>
-  );
+  return <CloseWrapper asChild>{content}</CloseWrapper>;
 }
 
 export default function SidebarContent({

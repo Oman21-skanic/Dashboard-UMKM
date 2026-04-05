@@ -1,9 +1,4 @@
-import {
-  ArrowLeftRight,
-  BarChart3,
-  Bell,
-  Package,
-} from "lucide-react";
+import { ArrowLeftRight, BarChart3, Bell, Package } from "lucide-react";
 import AuthTabs from "@/component/AuthTabs";
 
 const features = [
@@ -72,7 +67,11 @@ export default function AuthShell({
             </div>
           </div>
 
-          <div className={showCommunityCard ? "relative z-10" : "relative z-10 h-0"} >
+          <div
+            className={
+              showCommunityCard ? "relative z-10" : "relative z-10 h-0"
+            }
+          >
             {showCommunityCard ? (
               <div className="rounded-[1.85rem] border border-[rgba(175,198,217,0.34)] bg-[rgba(95,134,165,0.35)] px-7 py-6">
                 <div className="flex items-center gap-4">
@@ -94,12 +93,12 @@ export default function AuthShell({
                       </span>
                     ))}
                   </div>
-              <p className="text-xs text-[#a7bacd]">
-                Bergabung dengan{" "}
-                <span className="block text-[1.35rem] font-semibold text-[#eaf0f6]">
-                  10.000+ UMKM
-                </span>
-              </p>
+                  <p className="text-xs text-[#a7bacd]">
+                    Bergabung dengan{" "}
+                    <span className="block text-[1.35rem] font-semibold text-[#eaf0f6]">
+                      10.000+ UMKM
+                    </span>
+                  </p>
                 </div>
               </div>
             ) : null}

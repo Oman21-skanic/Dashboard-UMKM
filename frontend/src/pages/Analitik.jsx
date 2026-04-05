@@ -308,7 +308,7 @@ export default function Analitik() {
             ) : (
               <>
                 {/* Stat Cards */}
-                <section className="grid gap-4 lg:grid-cols-4">
+                <section className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                   {statCards.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -343,7 +343,7 @@ export default function Analitik() {
                 </section>
 
                 {/* Revenue Trend + Top Products */}
-                <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+                <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
                   <Card className="border-[#eef2f7] shadow-[0_18px_40px_rgba(15,42,67,0.08)]">
                     <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
                       <div>
