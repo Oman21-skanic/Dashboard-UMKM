@@ -13,7 +13,9 @@ export function AuthProvider({ children }) {
     }
     return null;
   });
-  const [loading, setLoading] = useState(false);
+  // Mulai dengan true jika ada token → tunggu validasi selesai dulu
+  // supaya ProtectedRoute tidak redirect ke login sebelum sesi terkonfirmasi
+  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem("token")));
 
   const fetchProfile = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -43,8 +45,14 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Validasi token saat app pertama kali load
   useEffect(() => {
-    if (localStorage.getItem("token")) fetchProfile();
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchProfile().finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, [fetchProfile]);
 
   const register = useCallback(async (fullName, businessName, email, whatsapp, password) => {
@@ -78,7 +86,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       throw new Error(err.response?.data?.msg || "Login gagal");
     } finally {
-      setLoading(false);
+      setLoading(false); // loading selesai setelah proses login
     }
   }, [fetchProfile]);
 
