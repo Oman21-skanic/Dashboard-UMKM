@@ -10,6 +10,7 @@ import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/component/ui/sh
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/component/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
+import ForgotPasswordModal from "@/component/ForgotPasswordModal";
 
 export default function Setelan() {
   const { user, logout, updateProfile, updatePassword } = useAuth();
@@ -31,6 +32,7 @@ export default function Setelan() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // System Environment States
   const [apiStatus, setApiStatus] = useState("checking"); // checking, ok, error
@@ -113,7 +115,8 @@ export default function Setelan() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fffcf5] text-[#102e4a]">
+    <>
+      <div className="min-h-screen bg-[#fffcf5] text-[#102e4a]">
       <div className="flex min-h-screen">
         <aside className="hidden w-72 flex-col bg-[#102e4a] text-white md:flex">
           <SidebarContent
@@ -288,6 +291,13 @@ export default function Setelan() {
                               {showOldPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowForgotPassword(true)}
+                            className="mt-1 self-end text-xs font-semibold text-[#153a5c] hover:text-[#2563eb] transition-colors duration-150 cursor-pointer bg-transparent border-none p-0 text-right w-full"
+                          >
+                            Lupa password lama?
+                          </button>
                         </div>
                         
                         <div className="grid gap-2">
@@ -399,5 +409,11 @@ export default function Setelan() {
         </div>
       </div>
     </div>
+
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
+    </>
   );
 }

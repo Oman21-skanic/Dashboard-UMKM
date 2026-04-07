@@ -6,6 +6,7 @@ import AuthShell from "@/component/AuthShell";
 import { Input } from "@/component/ui/input";
 import { Button } from "@/component/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import ForgotPasswordModal from "@/component/ForgotPasswordModal";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -19,6 +20,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -93,9 +95,13 @@ export default function Login() {
                 )}
               </button>
             </div>
-            <p className="mt-1 text-right text-sm font-semibold text-[#153a5c] lg:text-[0.95rem]">
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="mt-1 block w-full text-right text-sm font-semibold text-[#153a5c] hover:text-[#2563eb] transition-colors duration-150 lg:text-[0.95rem] cursor-pointer bg-transparent border-none p-0"
+            >
               Lupa Password?
-            </p>
+            </button>
           </div>
 
           {error ? <p className="auth-error">{error}</p> : null}
@@ -113,6 +119,11 @@ export default function Login() {
 
         <AuthBottomNav activeItem="login" />
       </section>
+
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </AuthShell>
   );
 }

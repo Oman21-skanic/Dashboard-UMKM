@@ -3,19 +3,134 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const {
+  generateOTP,
+  storeOTP,
+  getStoredOTP,
+  markVerified,
+  clearOTP,
+  sendOTPEmail,
+} = require('../utils/otpService');
 
 // Konfigurasi JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
-// FITUR FORGOT PASSWORD
-router.post("/forgot-password", async (req, res) => {
+// ════════════════════════════════════════════════════════════════
+// STEP 1 — Kirim OTP via Email
+// POST /api/auth/forgot-password/send-otp
+// Body: { email }
+// ════════════════════════════════════════════════════════════════
+router.post('/forgot-password/send-otp', async (req, res) => {
   try {
-    console.log("Forgot Password");
-    res.json({ msg: "Fitur forgot password sedang dikembangkan" });
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ msg: 'Email wajib diisi.' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).json({ msg: 'Email tidak terdaftar di sistem kami.' });
+    }
+
+    const otp = generateOTP();
+    storeOTP(email.toLowerCase(), otp);
+
+    await sendOTPEmail(user.email, otp);
+    return res.json({
+      msg: 'Kode OTP telah dikirim ke email Anda.',
+      maskedDestination: maskEmail(user.email),
+    });
   } catch (err) {
-    res.status(500).send('Server Error');
+    console.error('[send-otp]', err.message);
+    if (err.message.includes('Konfigurasi')) {
+      return res.status(503).json({ msg: err.message });
+    }
+    res.status(500).json({ msg: 'Gagal mengirim OTP. Coba lagi.' });
   }
 });
+
+// ════════════════════════════════════════════════════════════════
+// STEP 2 — Verifikasi kode OTP
+// POST /api/auth/forgot-password/verify-otp
+// Body: { email, otp }
+// ════════════════════════════════════════════════════════════════
+router.post('/forgot-password/verify-otp', (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ msg: 'Email dan kode OTP wajib diisi.' });
+  }
+
+  const stored = getStoredOTP(email);
+  if (!stored) {
+    return res.status(400).json({ msg: 'Sesi OTP tidak ditemukan. Silakan kirim ulang.' });
+  }
+  if (Date.now() > stored.expiresAt) {
+    clearOTP(email);
+    return res.status(400).json({ msg: 'Kode OTP sudah kedaluwarsa. Silakan kirim ulang.' });
+  }
+  if (stored.otp !== otp.trim()) {
+    return res.status(400).json({ msg: 'Kode OTP salah.' });
+  }
+
+  const resetToken = markVerified(email);
+  res.json({ msg: 'OTP terverifikasi.', resetToken });
+});
+
+// ════════════════════════════════════════════════════════════════
+// STEP 3 — Reset password dengan reset token
+// POST /api/auth/forgot-password/reset
+// Body: { email, resetToken, newPassword }
+// ════════════════════════════════════════════════════════════════
+router.post('/forgot-password/reset', async (req, res) => {
+  try {
+    const { email, resetToken, newPassword } = req.body;
+
+    if (!email || !resetToken || !newPassword) {
+      return res.status(400).json({ msg: 'Data tidak lengkap.' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ msg: 'Password baru harus minimal 8 karakter.' });
+    }
+
+    const stored = getStoredOTP(email);
+    if (!stored) {
+      return res.status(400).json({ msg: 'Sesi reset tidak ditemukan. Ulangi dari awal.' });
+    }
+    if (!stored.verified || stored.resetToken !== resetToken) {
+      return res.status(403).json({ msg: 'Token reset tidak valid.' });
+    }
+    if (Date.now() > stored.resetTokenExpiresAt) {
+      clearOTP(email);
+      return res.status(400).json({ msg: 'Sesi reset sudah kedaluwarsa. Ulangi dari awal.' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) return res.status(404).json({ msg: 'Akun tidak ditemukan.' });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    clearOTP(email); // Hapus sesi setelah berhasil
+    res.json({ msg: 'Password berhasil direset! Silakan login dengan password baru Anda.' });
+  } catch (err) {
+    console.error('[reset-password]', err.message);
+    res.status(500).json({ msg: 'Gagal mereset password.' });
+  }
+});
+
+// Helper: masking
+function maskEmail(email) {
+  const [user, domain] = email.split('@');
+  const visible = user.slice(0, 2);
+  return `${visible}${'*'.repeat(Math.max(user.length - 2, 3))}@${domain}`;
+}
+function maskPhone(phone) {
+  const d = phone.replace(/\D/g, '');
+  return d.slice(0, 3) + '****' + d.slice(-3);
+}
 
 // FITUR REGISTER 
 router.post('/register', async (req, res) => {
