@@ -46,7 +46,7 @@ router.post('/forgot-password/send-otp', async (req, res) => {
     if (err.message.includes('Konfigurasi')) {
       return res.status(503).json({ msg: err.message });
     }
-    res.status(500).json({ msg: 'Gagal mengirim OTP. Coba lagi.' });
+    res.status(500).json({ msg: 'Gagal mengirim OTP.', error: err.message });
   }
 });
 
