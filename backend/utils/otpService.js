@@ -53,6 +53,9 @@ async function sendOTPEmail(toEmail, otp) {
     port: 587,
     secure: false,
     auth: { user: gmailUser, pass: gmailPass },
+    family: 4,
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
   });
 
   await transporter.sendMail({
