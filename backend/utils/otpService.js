@@ -49,7 +49,9 @@ async function sendOTPEmail(toEmail, otp) {
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: { user: gmailUser, pass: gmailPass },
   });
 
