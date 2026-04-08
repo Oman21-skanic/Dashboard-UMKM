@@ -36,6 +36,11 @@ router.post('/forgot-password/send-otp', async (req, res) => {
     const otp = generateOTP();
     storeOTP(email.toLowerCase(), otp);
 
+    // LOG UNTUK TESTING DI PRODUCTION (Lihat di Dashboard Railway -> Logs)
+    console.log('==========================================');
+    console.log(`🔑 OTP DEBUG [${email}]: ${otp}`);
+    console.log('==========================================');
+
     await sendOTPEmail(user.email, otp);
     return res.json({
       msg: 'Kode OTP telah dikirim ke email Anda.',
