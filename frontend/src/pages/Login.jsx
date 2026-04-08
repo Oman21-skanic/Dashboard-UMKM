@@ -97,7 +97,7 @@ export default function Login() {
             </div>
             <button
               type="button"
-              onClick={() => setShowForgotPassword(true)}
+              onClick={() => navigate("/forgot-password")}
               className="mt-1 block w-full text-right text-sm font-semibold text-[#153a5c] hover:text-[#2563eb] transition-colors duration-150 lg:text-[0.95rem] cursor-pointer bg-transparent border-none p-0"
             >
               Lupa Password?
@@ -116,14 +116,8 @@ export default function Login() {
           </Button>
         </form>
 
-
         <AuthBottomNav activeItem="login" />
       </section>
-
-      <ForgotPasswordModal
-        isOpen={showForgotPassword}
-        onClose={() => setShowForgotPassword(false)}
-      />
     </AuthShell>
   );
 }

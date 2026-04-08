@@ -79,8 +79,8 @@ router.post('/forgot-password/verify-otp', (req, res) => {
     return res.status(400).json({ msg: 'Kode OTP salah.' });
   }
 
-  const resetToken = markVerified(email);
-  res.json({ msg: 'OTP terverifikasi.', resetToken });
+  const token = markVerified(email);
+  res.json({ msg: 'OTP terverifikasi.', token });
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -90,9 +90,9 @@ router.post('/forgot-password/verify-otp', (req, res) => {
 // ════════════════════════════════════════════════════════════════
 router.post('/forgot-password/reset', async (req, res) => {
   try {
-    const { email, resetToken, newPassword } = req.body;
-
-    if (!email || !resetToken || !newPassword) {
+    const { email, token, newPassword } = req.body;
+2
+    if (!email || !token || !newPassword) {
       return res.status(400).json({ msg: 'Data tidak lengkap.' });
     }
     if (newPassword.length < 8) {
@@ -103,10 +103,10 @@ router.post('/forgot-password/reset', async (req, res) => {
     if (!stored) {
       return res.status(400).json({ msg: 'Sesi reset tidak ditemukan. Ulangi dari awal.' });
     }
-    if (!stored.verified || stored.resetToken !== resetToken) {
+    if (!stored.verified || stored.token !== token || stored.type !== 'forgot-password') {
       return res.status(403).json({ msg: 'Token reset tidak valid.' });
     }
-    if (Date.now() > stored.resetTokenExpiresAt) {
+    if (Date.now() > stored.tokenExpiresAt) {
       clearOTP(email);
       return res.status(400).json({ msg: 'Sesi reset sudah kedaluwarsa. Ulangi dari awal.' });
     }
@@ -137,10 +137,70 @@ function maskPhone(phone) {
   return d.slice(0, 3) + '****' + d.slice(-3);
 }
 
-// FITUR REGISTER 
+// ════════════════════════════════════════════════════════════════
+// REGISTER OTP FLOW
+// ════════════════════════════════════════════════════════════════
+
+// Step 1: Send Registration OTP
+router.post('/register/send-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ msg: 'Email wajib diisi.' });
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (user) return res.status(400).json({ msg: 'Email sudah terdaftar.' });
+
+    const otp = generateOTP();
+    storeOTP(email.toLowerCase(), otp, 'registration');
+
+    console.log('==========================================');
+    console.log(`🔑 REGISTRATION OTP DEBUG [${email}]: ${otp}`);
+    console.log('==========================================');
+
+    await sendOTPEmail(email, otp);
+    res.json({ msg: 'OTP pendaftaran terkirim.', maskedDestination: maskEmail(email) });
+  } catch (err) {
+    console.error('[register-send-otp]', err.message);
+    res.status(500).json({ msg: 'Gagal mengirim OTP pendaftaran.', error: err.message });
+  }
+});
+
+// Step 2: Verify Registration OTP
+router.post('/register/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ msg: 'Data tidak lengkap.' });
+
+    const stored = getStoredOTP(email);
+    if (!stored || stored.type !== 'registration') {
+      return res.status(400).json({ msg: 'Sesi pendaftaran tidak ditemukan.' });
+    }
+    if (Date.now() > stored.expiresAt) {
+      clearOTP(email);
+      return res.status(400).json({ msg: 'OTP kedaluwarsa.' });
+    }
+    if (stored.otp !== otp.trim()) {
+      return res.status(400).json({ msg: 'Kode OTP salah.' });
+    }
+
+    const token = markVerified(email);
+    res.json({ msg: 'OTP terverifikasi.', token });
+  } catch (err) {
+    res.status(500).json({ msg: 'Gagal memverifikasi OTP.' });
+  }
+});
+
+// Step 3: Complete Registration
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, fullName, businessName, phoneNumber, channels } = req.body;
+    const { email, password, fullName, businessName, phoneNumber, token, channels } = req.body;
+
+    if (!token) return res.status(400).json({ msg: 'Token pendaftaran diperlukan.' });
+
+    const stored = getStoredOTP(email);
+    if (!stored || !stored.verified || stored.token !== token || stored.type !== 'registration') {
+      return res.status(403).json({ msg: 'Token pendaftaran tidak valid.' });
+    }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -163,10 +223,11 @@ router.post('/register', async (req, res) => {
       fullName,
       businessName,
       phoneNumber,
-      channels
+      channels: channels || []
     });
 
     await user.save();
+    clearOTP(email); // Hapus sesi setelah sukses
     res.status(201).json({ msg: 'User berhasil didaftarkan!' });
   } catch (err) {
     console.error(err.message);
