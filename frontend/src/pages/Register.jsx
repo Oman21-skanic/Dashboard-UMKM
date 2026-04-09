@@ -86,7 +86,15 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      const data = await sendRegisterOTP(email.toLowerCase().trim());
+      // Kirim DATA LENGKAP ke BE
+      const userData = {
+        email: email.toLowerCase().trim(),
+        password,
+        fullName,
+        businessName,
+        phoneNumber: whatsapp,
+      };
+      const data = await sendRegisterOTP(userData);
       setMaskedDestination(data.maskedDestination || email);
       setStep(2);
       // focus first otp box
@@ -98,7 +106,7 @@ export default function Register() {
     }
   };
 
-  // Step 2: Verify OTP
+  // Step 2: Verify OTP & Finalize
   const handleVerifyOTP = async (e) => {
     e?.preventDefault();
     setError("");
@@ -110,26 +118,14 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      const data = await verifyRegisterOTP(email.toLowerCase().trim(), code);
-      setRegistrationToken(data.token);
-      // Langsung panggil final register
-      await handleCompleteRegistration(data.token);
+      await verifyRegisterOTP(email.toLowerCase().trim(), code);
+      setStep(3); // Success state
     } catch (err) {
-      setError(err.message || "Kode OTP tidak valid.");
+      setError(err.message || "Kode OTP salah atau pendaftaran gagal.");
       setOtpValues(Array(OTP_DIGITS).fill(""));
       setTimeout(() => otpRefs.current[0]?.focus(), 50);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Step 3: API Register
-  const handleCompleteRegistration = async (token) => {
-    try {
-      await register(fullName, businessName, email, whatsapp, password, token);
-      setStep(3); // Success state
-    } catch (err) {
-      setError(err.message || "Final registrasi gagal.");
     }
   };
 
@@ -272,6 +268,9 @@ export default function Register() {
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
+                  <p className="mt-1 text-[0.7rem] text-[#8f98a6]">
+                    Rekomendasi: Minimal 8 karakter, gunakan campuran huruf, angka, dan simbol.
+                  </p>
                 </div>
 
                 <div>

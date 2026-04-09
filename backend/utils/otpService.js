@@ -10,10 +10,11 @@ function generateOTP() {
   return crypto.randomInt(100000, 999999).toString();
 }
 
-function storeOTP(email, otp, type = 'forgot-password') {
+function storeOTP(email, otp, type = 'forgot-password', userData = null) {
   otpStore.set(email.toLowerCase(), {
     otp,
     type,
+    userData, // Data user sementara untuk registrasi
     expiresAt: Date.now() + OTP_TTL_MS,
     verified: false,
     token: null,

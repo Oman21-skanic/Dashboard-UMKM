@@ -55,13 +55,13 @@ export function AuthProvider({ children }) {
     }
   }, [fetchProfile]);
 
-  const sendRegisterOTP = useCallback(async (email) => {
+  const sendRegisterOTP = useCallback(async (userData) => {
     setLoading(true);
     try {
-      const { data } = await axios.post(`${API_URL}/api/auth/register/send-otp`, { email });
+      const { data } = await axios.post(`${API_URL}/api/auth/register/send-otp`, userData);
       return data;
     } catch (err) {
-      throw new Error(err.response?.data?.msg || "Gagal mengirim OTP pendaftaran");
+      throw new Error(err.response?.data?.msg || "Gagal memproses pendaftaran");
     } finally {
       setLoading(false);
     }
@@ -71,23 +71,9 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const { data } = await axios.post(`${API_URL}/api/auth/register/verify-otp`, { email, otp });
-      return data; // returns { token }
+      return data; // returns { msg: "Akun berhasil dibuat" }
     } catch (err) {
       throw new Error(err.response?.data?.msg || "Gagal memverifikasi OTP");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const register = useCallback(async (fullName, businessName, email, whatsapp, password, token) => {
-    setLoading(true);
-    try {
-      const { data } = await axios.post(`${API_URL}/api/auth/register`, {
-        email, password, fullName, businessName, phoneNumber: whatsapp, token, channels: [],
-      });
-      return data;
-    } catch (err) {
-      throw new Error(err.response?.data?.msg || "Registrasi gagal");
     } finally {
       setLoading(false);
     }
@@ -105,22 +91,10 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const verifyForgotPasswordOTP = useCallback(async (email, otp) => {
+  const resetPassword = useCallback(async (email, otp, newPassword) => {
     setLoading(true);
     try {
-      const { data } = await axios.post(`${API_URL}/api/auth/forgot-password/verify-otp`, { email, otp });
-      return data; // returns { token }
-    } catch (err) {
-      throw new Error(err.response?.data?.msg || "Gagal memverifikasi OTP");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const resetPassword = useCallback(async (email, token, newPassword) => {
-    setLoading(true);
-    try {
-      const { data } = await axios.post(`${API_URL}/api/auth/forgot-password/reset`, { email, token, newPassword });
+      const { data } = await axios.post(`${API_URL}/api/auth/forgot-password/reset`, { email, otp, newPassword });
       return data;
     } catch (err) {
       throw new Error(err.response?.data?.msg || "Gagal mereset password");
@@ -201,10 +175,10 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(() => ({
     user, isAuthenticated: Boolean(user), loading,
-    login, register, logout, getToken, fetchProfile, updateProfile, updatePassword,
-    sendRegisterOTP, verifyRegisterOTP, sendForgotPasswordOTP, verifyForgotPasswordOTP, resetPassword
-  }), [user, loading, login, register, logout, getToken, fetchProfile, updateProfile, updatePassword,
-    sendRegisterOTP, verifyRegisterOTP, sendForgotPasswordOTP, verifyForgotPasswordOTP, resetPassword]);
+    login, logout, getToken, fetchProfile, updateProfile, updatePassword,
+    sendRegisterOTP, verifyRegisterOTP, sendForgotPasswordOTP, resetPassword
+  }), [user, loading, login, logout, getToken, fetchProfile, updateProfile, updatePassword,
+    sendRegisterOTP, verifyRegisterOTP, sendForgotPasswordOTP, resetPassword]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

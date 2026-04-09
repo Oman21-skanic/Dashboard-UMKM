@@ -59,38 +59,21 @@ export default function ForgotPassword() {
     }
   };
 
-  // Step 2: Verify OTP
-  const handleVerifyOTP = async (e) => {
+  // Step 2: Combined OTP & New Password Reset
+  const handleResetPassword = async (e) => {
     e?.preventDefault();
     setError("");
     const code = otpValues.join("");
     if (code.length < OTP_DIGITS) { setError("Masukkan 6 digit kode OTP."); return; }
-
-    setIsLoading(true);
-    try {
-      const data = await verifyForgotPasswordOTP(email.toLowerCase().trim(), code);
-      setToken(data.token);
-      setStep(STEP.PASSWORD);
-    } catch (err) {
-      setError(err.message || "Kode OTP salah.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Step 3: Reset Password
-  const handleResetPassword = async (e) => {
-    e?.preventDefault();
-    setError("");
     if (newPassword.length < 8) { setError("Password minimal 8 karakter."); return; }
     if (newPassword !== confirmPassword) { setError("Password tidak cocok."); return; }
 
     setIsLoading(true);
     try {
-      await resetPassword(email.toLowerCase().trim(), token, newPassword);
+      await resetPassword(email.toLowerCase().trim(), code, newPassword);
       setStep(STEP.SUCCESS);
     } catch (err) {
-      setError(err.message || "Gagal mereset password.");
+      setError(err.message || "Kode OTP salah atau gagal mereset password.");
     } finally {
       setIsLoading(false);
     }
@@ -155,39 +138,31 @@ export default function ForgotPassword() {
         {step === STEP.OTP && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-semibold text-[#123a5e]">Verifikasi OTP</h1>
-              <p className="mt-1.5 text-[#647387]">Kode telah dikirim ke <strong>{maskedDestination}</strong></p>
-            </div>
-            <form onSubmit={handleVerifyOTP} className="space-y-6">
-              <div className="flex gap-2 justify-between">
-                {otpValues.map((val, i) => (
-                  <input
-                    key={i}
-                    ref={(el) => (otpRefs.current[i] = el)}
-                    type="text" inputMode="numeric" maxLength={1}
-                    value={val}
-                    onChange={(e) => handleOtpChange(i, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                    className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:border-[#123a5e] focus:ring-4 focus:ring-[#123a5e]/10 outline-none"
-                    disabled={isLoading}
-                  />
-                ))}
-              </div>
-              {error && <p className="auth-error">{error}</p>}
-              <Button type="submit" disabled={isLoading || otpValues.some(v => !v)} className="h-12 w-full bg-[#123d62] text-white">
-                {isLoading ? "Memverifikasi..." : "Verifikasi OTP"}
-              </Button>
-            </form>
-          </div>
-        )}
-
-        {step === STEP.PASSWORD && (
-          <div className="space-y-6">
-            <div>
               <h1 className="text-3xl font-semibold text-[#123a5e]">Reset Password</h1>
-              <p className="mt-1.5 text-[#647387]">Buat password baru untuk akun Anda.</p>
+              <p className="mt-1.5 text-[#647387]">Masukkan kode OTP dan buat password baru.</p>
             </div>
-            <form onSubmit={handleResetPassword} className="space-y-4">
+            
+            <form onSubmit={handleResetPassword} className="space-y-6">
+              {/* OTP Section */}
+              <div className="space-y-3">
+                <Label className="text-[#123a5e] font-semibold">Kode OTP (Cek Email)</Label>
+                <div className="flex gap-2 justify-between">
+                  {otpValues.map((val, i) => (
+                    <input
+                      key={i}
+                      ref={(el) => (otpRefs.current[i] = el)}
+                      type="text" inputMode="numeric" maxLength={1}
+                      value={val}
+                      onChange={(e) => handleOtpChange(i, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                      className="w-10 h-12 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:border-[#123a5e] outline-none"
+                      disabled={isLoading}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Password Section */}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Password Baru</Label>
@@ -205,6 +180,9 @@ export default function ForgotPassword() {
                       {showNew ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
+                  <p className="mt-1 text-[0.7rem] text-[#8f98a6]">
+                    Rekomendasi: Gunakan campuran huruf, angka, dan simbol agar lebih kuat.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Konfirmasi Password</Label>
@@ -224,9 +202,10 @@ export default function ForgotPassword() {
                   </div>
                 </div>
               </div>
+
               {error && <p className="auth-error">{error}</p>}
-              <Button type="submit" disabled={isLoading} className="h-12 w-full bg-[#123d62] text-white">
-                {isLoading ? "Memproses..." : "Reset Password"}
+              <Button type="submit" disabled={isLoading || otpValues.some(v => !v)} className="h-12 w-full bg-[#123d62] text-white">
+                {isLoading ? "Memproses..." : "Simpan Password Baru"}
               </Button>
             </form>
           </div>
