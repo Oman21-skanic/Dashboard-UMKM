@@ -86,7 +86,9 @@ export default function Login() {
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#8f98a6]"
-                aria-label={showPassword ? "Sembunyikan password" : "Lihat password"}
+                aria-label={
+                  showPassword ? "Sembunyikan password" : "Lihat password"
+                }
               >
                 {showPassword ? (
                   <EyeOff className="h-5 w-5" />
