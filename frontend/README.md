@@ -1,18 +1,43 @@
-# React + Vite
+# 💻 DashUMKM - Frontend Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Bagian ini berisi aplikasi antarmuka dari **DashUMKM**. Aplikasi ini dibangun sebagai Single Page Application (SPA) modern yang sangat responsif, menampilkan desain yang cantik, mudah, dan elegan berkat arsitektur berbasis *components*.
 
-Currently, two official plugins are available:
+## 🛠️ Tech Stack & Library Utama
+Proyek frontend dibangun menggunakan teknologi paling mutakhir (2026 standards):
+- **Framework**: React.js (v19) via Vite
+- **Styling**: Tailwind CSS (v4)
+- **UI Components**: Kombinasi Radix UI, Lucide React (untuk ikon).
+- **Forms & Data Flow**: React Hook Form berkolaborasi dengan Zod (*schema validation*).
+- **Data Fetching**: Axios untuk integrasi REST API backend.
+- **Charts / Analitik**: library Recharts untuk melukis grafik visual performa toko secara dinamis.
+- **Excel/XLSX Parser**: SheetJS (XLSX) ditarik via CDN untuk mengolah manipulasi format Excel.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🗂️ Struktur Folder
+- `src/components/` : Komponen antar-muka *reusable* (Kartu, Tombol, Tabel, Modals).
+- `src/pages/`      : Tata letak halaman (Dashboard Home, Inventory, Pesanan, dsb).
+- `src/api/`        : Konfigurasi Axios dan endpoint.
+- `src/hooks/`      : *Custom hooks* React untuk mengelola state lokal maupun logika.
 
-## React Compiler
+## 🚀 Jalankan di Lokal (Local Development)
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+**1. Install dependensi:**
+```bash
+npm install
+```
 
-Note: This will impact Vite dev & build performances.
+**2. Setup *Environment Variables*:**
+Buat file `.env` di atas *root* folder `/frontend` (sejajar dengan package.json)
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+*(Sesuaikan port localhost tersebut dengan port yang digunakan di backend Anda)*
 
-## Expanding the ESLint configuration
+**3. Mulai *Dev Server*:**
+```bash
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Aplikasi frontend kemudian dapat dilihat beroperasi secara langsung pada [http://localhost:5173](http://localhost:5173).
+
+---
+*Dibangun dengan ❤️ oleh Tim Capstone CC26-PS025*
