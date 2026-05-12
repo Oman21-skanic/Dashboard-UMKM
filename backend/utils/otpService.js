@@ -90,7 +90,7 @@ async function sendOTPEmail(toEmail, otp) {
       await axios.post('https://api.brevo.com/v3/smtp/email', {
         sender: { name: 'DashUMKM Security', email: 'dashumkm21@gmail.com' },
         to: [{ email: toEmail }],
-        subject: \`[DashUMKM] \${otp} adalah kode verifikasi Anda\`,
+        subject: `[DashUMKM] ${otp} adalah kode verifikasi Anda`,
         htmlContent: htmlContent
       }, {
         headers: {
@@ -124,9 +124,9 @@ async function sendOTPEmail(toEmail, otp) {
     });
 
     const mailOptions = {
-      from: \`"DashUMKM Security" <\${process.env.GMAIL_USER}>\`,
+      from: `"DashUMKM Security" <${process.env.GMAIL_USER}>`,
       to: toEmail,
-      subject: \`[DashUMKM] \${otp} adalah kode verifikasi Anda\`,
+      subject: `[DashUMKM] ${otp} adalah kode verifikasi Anda`,
       html: htmlContent
     };
 
