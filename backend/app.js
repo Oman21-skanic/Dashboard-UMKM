@@ -19,7 +19,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 // 1. SECURITY HEADERS (Helmet)
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
 
 // 2. CORS CONFIG (Must be before Rate Limiting so 429 returns CORS headers)
 app.use(cors({
